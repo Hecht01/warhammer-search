@@ -1,0 +1,11 @@
+beautifulsoup4
+requests
+sentence-transformers
+qdrant-client
+fastapi
+uvicorn
+pydantic
+tqdm
+flake8
+black
+pytest
