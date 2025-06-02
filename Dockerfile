@@ -1,6 +1,6 @@
 FROM python:3.10-slim
 
-WORKDIR /app
+WORKDIR .
 
 # Install dependencies
 COPY requirements.txt .
@@ -8,8 +8,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy code
 COPY ./api ./api
-COPY ./embedding ./embedding
-COPY ./preprocessing ./preprocessing
+COPY ./indexing ./indexing
 
 # Expose port
 EXPOSE 8000
