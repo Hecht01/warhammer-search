@@ -1,14 +1,14 @@
 """Tests for the FastAPI search endpoint."""
 
 import unittest
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import Mock, patch
 import sys
 import os
 
 # Add parent directory to path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from fastapi.testclient import TestClient
+from fastapi.testclient import TestClient  # noqa: E402
 
 
 class TestSearchAPI(unittest.TestCase):
@@ -101,7 +101,6 @@ class TestSearchAPI(unittest.TestCase):
         response = self.client.get("/search?q=test&limit=3")
 
         self.assertEqual(response.status_code, 200)
-        data = response.json()
         # The API should request 3 results from Qdrant
         self.mock_qdrant_client.search.assert_called_once()
         call_args = self.mock_qdrant_client.search.call_args

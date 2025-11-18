@@ -8,7 +8,7 @@ import numpy as np
 # Add parent directory to path to import indexing module
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from indexing.embed import embed_texts
+from indexing.embed import embed_texts  # noqa: E402
 
 
 class TestEmbedding(unittest.TestCase):
@@ -19,9 +19,12 @@ class TestEmbedding(unittest.TestCase):
         texts = ["The Emperor protects.", "Horus was the Warmaster."]
         embeddings = embed_texts(texts, show_progress=False)
 
-        self.assertIsInstance(embeddings, np.ndarray, "Embeddings should be a numpy array")
-        self.assertEqual(embeddings.shape[0], len(texts), "Number of embeddings should match number of inputs")
-        self.assertEqual(embeddings.shape[1], 384, "Embeddings should have 384 dimensions for all-MiniLM-L6-v2")
+        self.assertIsInstance(embeddings, np.ndarray,
+                              "Embeddings should be a numpy array")
+        self.assertEqual(embeddings.shape[0], len(texts),
+                         "Number of embeddings should match number of inputs")
+        self.assertEqual(embeddings.shape[1], 384,
+                         "Embeddings should have 384 dimensions")
 
     def test_embed_texts_determinism(self):
         """Test that embeddings are deterministic."""
@@ -138,8 +141,9 @@ class TestEmbedding(unittest.TestCase):
         )
 
         # Similar texts should have higher cosine similarity
-        self.assertGreater(sim_similar, sim_different,
-                         "Similar texts should have higher cosine similarity")
+        self.assertGreater(
+            sim_similar, sim_different,
+            "Similar texts should have higher cosine similarity")
 
     def test_progress_bar_parameter(self):
         """Test that progress bar parameter works."""
@@ -149,7 +153,9 @@ class TestEmbedding(unittest.TestCase):
         emb1 = embed_texts(texts, show_progress=True)
         emb2 = embed_texts(texts, show_progress=False)
 
-        self.assertTrue(np.allclose(emb1, emb2), "Results should be same regardless of progress bar")
+        self.assertTrue(
+            np.allclose(emb1, emb2),
+            "Results should be same regardless of progress bar")
 
 
 if __name__ == '__main__':

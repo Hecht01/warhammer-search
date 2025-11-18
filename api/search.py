@@ -5,7 +5,6 @@ from typing import List
 from fastapi import FastAPI, Query, HTTPException
 from pydantic import BaseModel
 from qdrant_client import QdrantClient
-from qdrant_client.models import SearchRequest, Filter, FieldCondition, MatchValue
 from sentence_transformers import SentenceTransformer
 
 app = FastAPI(

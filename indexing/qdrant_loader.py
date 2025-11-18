@@ -1,6 +1,6 @@
 """Qdrant vector database utilities for storing and managing embeddings."""
 
-from typing import List, Any
+from typing import List
 import uuid
 import numpy as np
 from qdrant_client import QdrantClient

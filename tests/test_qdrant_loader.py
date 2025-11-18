@@ -1,7 +1,7 @@
 """Tests for Qdrant database operations."""
 
 import unittest
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import Mock, patch
 import sys
 import os
 import numpy as np
@@ -9,7 +9,9 @@ import numpy as np
 # Add parent directory to path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from indexing.qdrant_loader import init_qdrant_collection, upload_to_qdrant
+from indexing.qdrant_loader import (  # noqa: E402
+    init_qdrant_collection, upload_to_qdrant
+)
 
 
 class TestQdrantLoader(unittest.TestCase):
@@ -45,7 +47,7 @@ class TestQdrantLoader(unittest.TestCase):
         mock_client = Mock()
         mock_client_class.return_value = mock_client
 
-        result = init_qdrant_collection()
+        init_qdrant_collection()
 
         # Verify defaults
         call_args = mock_client.recreate_collection.call_args

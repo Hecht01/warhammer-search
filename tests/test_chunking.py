@@ -7,7 +7,7 @@ import os
 # Add parent directory to path to import indexing module
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from indexing.chunking import chunk_text, chunk_documents
+from indexing.chunking import chunk_text, chunk_documents  # noqa: E402
 
 
 class TestChunking(unittest.TestCase):
@@ -108,7 +108,8 @@ class TestChunking(unittest.TestCase):
 
     def test_unicode_text(self):
         """Test chunking with Unicode characters."""
-        text = "This has émojis 🎮 and spëcial çharacters. Multiple sentences here. More text follows."
+        text = ("This has émojis 🎮 and spëcial çharacters. "
+                "Multiple sentences here. More text follows.")
         chunks = chunk_text(text, chunk_size=50, overlap=5)
         self.assertGreater(len(chunks), 0)
         for chunk in chunks:

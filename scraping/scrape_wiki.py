@@ -6,7 +6,6 @@ from bs4 import BeautifulSoup
 from time import sleep
 from tqdm import tqdm
 import os
-import re
 
 BASE_URL = "https://warhammer40k.fandom.com"
 HEADERS = {"User-Agent": "Mozilla/5.0"}
@@ -147,7 +146,7 @@ def scrape_articles(links: List[str], output_dir: str = DATA_DIR) -> None:
 
 
 if __name__ == "__main__":
-    #For the MVP we only scrape the basic lore about each faction
+    # For the MVP we only scrape the basic lore about each faction
     category_url = f"{BASE_URL}/wiki/Category:Factions"
     article_links = get_page_links(category_url, limit=50)
 

@@ -8,7 +8,9 @@ import os
 # Add parent directory to path to import scraping module
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from scraping.scrape_wiki import get_page_links, extract_main_content, scrape_articles
+from scraping.scrape_wiki import (  # noqa: E402
+    get_page_links, extract_main_content, scrape_articles
+)
 
 
 class TestScraper(unittest.TestCase):
@@ -183,7 +185,8 @@ class TestScraper(unittest.TestCase):
     @patch('builtins.open', new_callable=mock_open)
     @patch('os.path.exists')
     @patch('os.makedirs')
-    def test_scrape_articles_empty_content_warning(self, mock_makedirs, mock_exists, mock_file, mock_get):
+    def test_scrape_articles_empty_content_warning(
+            self, mock_makedirs, mock_exists, mock_file, mock_get):
         """Test that scraping warns on empty content extraction."""
         mock_exists.return_value = False
 
