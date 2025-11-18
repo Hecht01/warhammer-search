@@ -16,29 +16,25 @@ class TestSearchAPI(unittest.TestCase):
 
     def setUp(self):
         """Set up test client and mocks before each test."""
-        # Mock the Qdrant client and model before importing the app
-        self.mock_qdrant_client = Mock()
-        self.mock_model = Mock()
-
-        # Patch the imports
-        self.qdrant_patcher = patch(
-            "api.search.QdrantClient", return_value=self.mock_qdrant_client
-        )
-        self.model_patcher = patch(
-            "api.search.SentenceTransformer", return_value=self.mock_model
-        )
-
-        self.qdrant_patcher.start()
-        self.model_patcher.start()
-
-        # Import the app after patching
+        # Import app first
         from api.search import app
 
         self.client = TestClient(app)
 
+        # Mock the client and model instances that were created at module level
+        self.mock_qdrant_client = Mock()
+        self.mock_model = Mock()
+
+        # Patch the actual instances in the api.search module
+        self.client_patcher = patch("api.search.client", self.mock_qdrant_client)
+        self.model_patcher = patch("api.search.model", self.mock_model)
+
+        self.client_patcher.start()
+        self.model_patcher.start()
+
     def tearDown(self):
         """Clean up patches after each test."""
-        self.qdrant_patcher.stop()
+        self.client_patcher.stop()
         self.model_patcher.stop()
 
     def test_health_endpoint_healthy(self):
