@@ -25,7 +25,6 @@ class MockSentenceTransformer:
             embedding = np.zeros(384)
             for word in words:
                 # Each word affects specific dimensions based on its hash
-                word_hash = hash(word) % 384
                 seed = hash(word) % (2**32)
                 rng = np.random.RandomState(seed)
                 # Add word contribution to embedding
