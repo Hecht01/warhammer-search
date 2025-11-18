@@ -6,7 +6,7 @@ import sys
 import os
 
 # Add parent directory to path
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from fastapi.testclient import TestClient  # noqa: E402
 
@@ -21,14 +21,19 @@ class TestSearchAPI(unittest.TestCase):
         self.mock_model = Mock()
 
         # Patch the imports
-        self.qdrant_patcher = patch('api.search.QdrantClient', return_value=self.mock_qdrant_client)
-        self.model_patcher = patch('api.search.SentenceTransformer', return_value=self.mock_model)
+        self.qdrant_patcher = patch(
+            "api.search.QdrantClient", return_value=self.mock_qdrant_client
+        )
+        self.model_patcher = patch(
+            "api.search.SentenceTransformer", return_value=self.mock_model
+        )
 
         self.qdrant_patcher.start()
         self.model_patcher.start()
 
         # Import the app after patching
         from api.search import app
+
         self.client = TestClient(app)
 
     def tearDown(self):
@@ -50,7 +55,9 @@ class TestSearchAPI(unittest.TestCase):
 
     def test_health_endpoint_unhealthy(self):
         """Test health check endpoint when Qdrant is unavailable."""
-        self.mock_qdrant_client.get_collections.side_effect = Exception("Connection failed")
+        self.mock_qdrant_client.get_collections.side_effect = Exception(
+            "Connection failed"
+        )
 
         response = self.client.get("/health")
 
@@ -104,7 +111,7 @@ class TestSearchAPI(unittest.TestCase):
         # The API should request 3 results from Qdrant
         self.mock_qdrant_client.search.assert_called_once()
         call_args = self.mock_qdrant_client.search.call_args
-        self.assertEqual(call_args.kwargs['limit'], 3)
+        self.assertEqual(call_args.kwargs["limit"], 3)
 
     def test_search_endpoint_empty_query(self):
         """Test search with empty query string."""
@@ -150,7 +157,9 @@ class TestSearchAPI(unittest.TestCase):
     def test_search_endpoint_qdrant_failure(self):
         """Test search when Qdrant search fails."""
         self.mock_model.encode.return_value = Mock(tolist=lambda: [0.1] * 384)
-        self.mock_qdrant_client.search.side_effect = Exception("Qdrant connection error")
+        self.mock_qdrant_client.search.side_effect = Exception(
+            "Qdrant connection error"
+        )
 
         response = self.client.get("/search?q=test")
 
@@ -266,5 +275,5 @@ class TestAPIIntegration(unittest.TestCase):
         pass
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

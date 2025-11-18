@@ -5,10 +5,7 @@ import re
 
 
 def chunk_text(
-    text: str,
-    chunk_size: int = 500,
-    overlap: int = 50,
-    min_chunk_size: int = 50
+    text: str, chunk_size: int = 500, overlap: int = 50, min_chunk_size: int = 50
 ) -> List[str]:
     """
     Split text into overlapping chunks, preferring sentence boundaries.
@@ -29,10 +26,14 @@ def chunk_text(
         return []
 
     if chunk_size <= overlap:
-        raise ValueError(f"chunk_size ({chunk_size}) must be greater than overlap ({overlap})")
+        raise ValueError(
+            f"chunk_size ({chunk_size}) must be greater than overlap ({overlap})"
+        )
 
     if min_chunk_size > chunk_size:
-        raise ValueError(f"min_chunk_size ({min_chunk_size}) must be <= chunk_size ({chunk_size})")
+        raise ValueError(
+            f"min_chunk_size ({min_chunk_size}) must be <= chunk_size ({chunk_size})"
+        )
 
     # Clean up the text
     text = text.strip()
@@ -66,7 +67,7 @@ def chunk_text(
         chunk_text = text[start:end]
 
         # Look for sentence endings: . ! ? followed by space or newline
-        sentence_endings = list(re.finditer(r'[.!?][\s\n]', chunk_text))
+        sentence_endings = list(re.finditer(r"[.!?][\s\n]", chunk_text))
 
         if sentence_endings:
             # Use the last sentence ending in the chunk
@@ -75,9 +76,11 @@ def chunk_text(
         else:
             # No sentence boundary found, try to break on whitespace
             remaining_text = text[start:end]
-            last_space = remaining_text.rfind(' ')
+            last_space = remaining_text.rfind(" ")
 
-            if last_space > chunk_size // 2:  # Only break on space if it's not too early
+            if (
+                last_space > chunk_size // 2
+            ):  # Only break on space if it's not too early
                 actual_end = start + last_space + 1
             else:
                 actual_end = end
@@ -106,7 +109,7 @@ def chunk_documents(
     documents: List[str],
     chunk_size: int = 500,
     overlap: int = 50,
-    min_chunk_size: int = 50
+    min_chunk_size: int = 50,
 ) -> List[dict]:
     """
     Chunk multiple documents and track source document index.
@@ -129,11 +132,13 @@ def chunk_documents(
         chunks = chunk_text(doc, chunk_size, overlap, min_chunk_size)
 
         for chunk_idx, chunk in enumerate(chunks):
-            result.append({
-                'text': chunk,
-                'doc_index': doc_idx,
-                'chunk_index': chunk_idx,
-                'total_chunks': len(chunks)
-            })
+            result.append(
+                {
+                    "text": chunk,
+                    "doc_index": doc_idx,
+                    "chunk_index": chunk_idx,
+                    "total_chunks": len(chunks),
+                }
+            )
 
     return result

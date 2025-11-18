@@ -11,7 +11,7 @@ def init_qdrant_collection(
     collection_name: str = "warhammer40kLore",
     vector_size: int = 384,
     host: str = "localhost",
-    port: int = 6333
+    port: int = 6333,
 ) -> QdrantClient:
     """
     Initialize a Qdrant collection with the specified parameters.
@@ -32,7 +32,7 @@ def init_qdrant_collection(
         client = QdrantClient(host=host, port=port)
         client.recreate_collection(
             collection_name=collection_name,
-            vectors_config=VectorParams(size=vector_size, distance=Distance.COSINE)
+            vectors_config=VectorParams(size=vector_size, distance=Distance.COSINE),
         )
         return client
     except Exception as e:
@@ -40,10 +40,7 @@ def init_qdrant_collection(
 
 
 def upload_to_qdrant(
-    client: QdrantClient,
-    collection_name: str,
-    texts: List[str],
-    embeddings: np.ndarray
+    client: QdrantClient, collection_name: str, texts: List[str], embeddings: np.ndarray
 ) -> None:
     """
     Upload text chunks and their embeddings to Qdrant.
@@ -71,7 +68,7 @@ def upload_to_qdrant(
             PointStruct(
                 id=uuid.uuid4().int & 0xFFFFFFFFFFFFFFFF,  # Ensure positive 64-bit int
                 vector=vector.tolist() if isinstance(vector, np.ndarray) else vector,
-                payload={"text": text}
+                payload={"text": text},
             )
             for text, vector in zip(texts, embeddings)
         ]

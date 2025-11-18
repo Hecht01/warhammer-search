@@ -6,7 +6,7 @@ import os
 import numpy as np
 
 # Add parent directory to path to import indexing module
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from indexing.embed import embed_texts  # noqa: E402
 
@@ -19,12 +19,17 @@ class TestEmbedding(unittest.TestCase):
         texts = ["The Emperor protects.", "Horus was the Warmaster."]
         embeddings = embed_texts(texts, show_progress=False)
 
-        self.assertIsInstance(embeddings, np.ndarray,
-                              "Embeddings should be a numpy array")
-        self.assertEqual(embeddings.shape[0], len(texts),
-                         "Number of embeddings should match number of inputs")
-        self.assertEqual(embeddings.shape[1], 384,
-                         "Embeddings should have 384 dimensions")
+        self.assertIsInstance(
+            embeddings, np.ndarray, "Embeddings should be a numpy array"
+        )
+        self.assertEqual(
+            embeddings.shape[0],
+            len(texts),
+            "Number of embeddings should match number of inputs",
+        )
+        self.assertEqual(
+            embeddings.shape[1], 384, "Embeddings should have 384 dimensions"
+        )
 
     def test_embed_texts_determinism(self):
         """Test that embeddings are deterministic."""
@@ -32,7 +37,9 @@ class TestEmbedding(unittest.TestCase):
         emb1 = embed_texts(texts, show_progress=False)
         emb2 = embed_texts(texts, show_progress=False)
 
-        self.assertTrue(np.allclose(emb1, emb2), "Embedding should be deterministic for same input")
+        self.assertTrue(
+            np.allclose(emb1, emb2), "Embedding should be deterministic for same input"
+        )
 
     def test_embed_single_string(self):
         """Test embedding a single string (not a list)."""
@@ -40,7 +47,9 @@ class TestEmbedding(unittest.TestCase):
         embeddings = embed_texts(text, show_progress=False)
 
         self.assertIsInstance(embeddings, np.ndarray)
-        self.assertEqual(embeddings.shape[0], 1, "Single string should produce one embedding")
+        self.assertEqual(
+            embeddings.shape[0], 1, "Single string should produce one embedding"
+        )
         self.assertEqual(embeddings.shape[1], 384)
 
     def test_embed_multiple_texts(self):
@@ -49,7 +58,7 @@ class TestEmbedding(unittest.TestCase):
             "Space Marines are elite warriors.",
             "Orks live for war.",
             "Tyranids consume all.",
-            "Necrons are ancient machines."
+            "Necrons are ancient machines.",
         ]
         embeddings = embed_texts(texts, show_progress=False)
 
@@ -89,11 +98,7 @@ class TestEmbedding(unittest.TestCase):
 
     def test_embed_unicode_text(self):
         """Test embedding text with Unicode characters."""
-        texts = [
-            "Primarch Roboute Guilliman",
-            "Craftworld Iyandèn 🏛️",
-            "T'au Empire"
-        ]
+        texts = ["Primarch Roboute Guilliman", "Craftworld Iyandèn 🏛️", "T'au Empire"]
         embeddings = embed_texts(texts, show_progress=False)
 
         self.assertEqual(embeddings.shape[0], 3)
@@ -105,7 +110,7 @@ class TestEmbedding(unittest.TestCase):
             "Blood for the Blood God!",
             "WAAAGH!!!",
             "++The Emperor's Will++",
-            "[ MECHANICUS DATALOG: 40000 ]"
+            "[ MECHANICUS DATALOG: 40000 ]",
         ]
         embeddings = embed_texts(texts, show_progress=False)
 
@@ -117,7 +122,9 @@ class TestEmbedding(unittest.TestCase):
         embeddings = embed_texts(texts, show_progress=False)
 
         # Check that embeddings are not all zeros
-        self.assertFalse(np.allclose(embeddings, 0), "Embeddings should not be all zeros")
+        self.assertFalse(
+            np.allclose(embeddings, 0), "Embeddings should not be all zeros"
+        )
 
         # Check that embeddings have reasonable magnitude (roughly normalized)
         norms = np.linalg.norm(embeddings, axis=1)
@@ -128,7 +135,7 @@ class TestEmbedding(unittest.TestCase):
         texts = [
             "Space Marines are warriors of the Emperor.",
             "The Emperor's Space Marines are elite soldiers.",
-            "Orks are green-skinned aliens who love to fight."
+            "Orks are green-skinned aliens who love to fight.",
         ]
         embeddings = embed_texts(texts, show_progress=False)
 
@@ -142,8 +149,10 @@ class TestEmbedding(unittest.TestCase):
 
         # Similar texts should have higher cosine similarity
         self.assertGreater(
-            sim_similar, sim_different,
-            "Similar texts should have higher cosine similarity")
+            sim_similar,
+            sim_different,
+            "Similar texts should have higher cosine similarity",
+        )
 
     def test_progress_bar_parameter(self):
         """Test that progress bar parameter works."""
@@ -154,9 +163,9 @@ class TestEmbedding(unittest.TestCase):
         emb2 = embed_texts(texts, show_progress=False)
 
         self.assertTrue(
-            np.allclose(emb1, emb2),
-            "Results should be same regardless of progress bar")
+            np.allclose(emb1, emb2), "Results should be same regardless of progress bar"
+        )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

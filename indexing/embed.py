@@ -7,7 +7,9 @@ from sentence_transformers import SentenceTransformer
 model = SentenceTransformer("all-MiniLM-L6-v2")
 
 
-def embed_texts(chunks: Union[List[str], str], show_progress: bool = True) -> np.ndarray:
+def embed_texts(
+    chunks: Union[List[str], str], show_progress: bool = True
+) -> np.ndarray:
     """
     Embed text chunks using the Sentence Transformer model.
 

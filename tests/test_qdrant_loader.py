@@ -7,17 +7,18 @@ import os
 import numpy as np
 
 # Add parent directory to path
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from indexing.qdrant_loader import (  # noqa: E402
-    init_qdrant_collection, upload_to_qdrant
+    init_qdrant_collection,
+    upload_to_qdrant,
 )
 
 
 class TestQdrantLoader(unittest.TestCase):
     """Test cases for Qdrant database operations."""
 
-    @patch('indexing.qdrant_loader.QdrantClient')
+    @patch("indexing.qdrant_loader.QdrantClient")
     def test_init_qdrant_collection_success(self, mock_client_class):
         """Test successful Qdrant collection initialization."""
         mock_client = Mock()
@@ -27,7 +28,7 @@ class TestQdrantLoader(unittest.TestCase):
             collection_name="test_collection",
             vector_size=384,
             host="localhost",
-            port=6333
+            port=6333,
         )
 
         # Verify client was created with correct parameters
@@ -36,12 +37,12 @@ class TestQdrantLoader(unittest.TestCase):
         # Verify collection was recreated
         mock_client.recreate_collection.assert_called_once()
         call_args = mock_client.recreate_collection.call_args
-        self.assertEqual(call_args.kwargs['collection_name'], "test_collection")
+        self.assertEqual(call_args.kwargs["collection_name"], "test_collection")
 
         # Verify client is returned
         self.assertEqual(result, mock_client)
 
-    @patch('indexing.qdrant_loader.QdrantClient')
+    @patch("indexing.qdrant_loader.QdrantClient")
     def test_init_qdrant_collection_default_params(self, mock_client_class):
         """Test collection initialization with default parameters."""
         mock_client = Mock()
@@ -51,9 +52,9 @@ class TestQdrantLoader(unittest.TestCase):
 
         # Verify defaults
         call_args = mock_client.recreate_collection.call_args
-        self.assertEqual(call_args.kwargs['collection_name'], "warhammer40kLore")
+        self.assertEqual(call_args.kwargs["collection_name"], "warhammer40kLore")
 
-    @patch('indexing.qdrant_loader.QdrantClient')
+    @patch("indexing.qdrant_loader.QdrantClient")
     def test_init_qdrant_collection_connection_failure(self, mock_client_class):
         """Test collection initialization when connection fails."""
         mock_client_class.side_effect = Exception("Connection refused")
@@ -63,7 +64,7 @@ class TestQdrantLoader(unittest.TestCase):
 
         self.assertIn("Failed to initialize Qdrant collection", str(context.exception))
 
-    @patch('indexing.qdrant_loader.QdrantClient')
+    @patch("indexing.qdrant_loader.QdrantClient")
     def test_init_qdrant_collection_creation_failure(self, mock_client_class):
         """Test collection initialization when collection creation fails."""
         mock_client = Mock()
@@ -88,10 +89,10 @@ class TestQdrantLoader(unittest.TestCase):
         call_args = mock_client.upsert.call_args
 
         # Verify collection name
-        self.assertEqual(call_args.kwargs['collection_name'], "test_collection")
+        self.assertEqual(call_args.kwargs["collection_name"], "test_collection")
 
         # Verify points
-        points = call_args.kwargs['points']
+        points = call_args.kwargs["points"]
         self.assertEqual(len(points), 3)
 
         # Verify each point has correct structure
@@ -131,7 +132,7 @@ class TestQdrantLoader(unittest.TestCase):
         upload_to_qdrant(mock_client, "test_collection", texts, embeddings)
 
         mock_client.upsert.assert_called_once()
-        points = mock_client.upsert.call_args.kwargs['points']
+        points = mock_client.upsert.call_args.kwargs["points"]
         self.assertEqual(len(points), 1)
 
     def test_upload_to_qdrant_large_batch(self):
@@ -144,7 +145,7 @@ class TestQdrantLoader(unittest.TestCase):
         upload_to_qdrant(mock_client, "test_collection", texts, embeddings)
 
         mock_client.upsert.assert_called_once()
-        points = mock_client.upsert.call_args.kwargs['points']
+        points = mock_client.upsert.call_args.kwargs["points"]
         self.assertEqual(len(points), num_items)
 
     def test_upload_to_qdrant_handles_list_vectors(self):
@@ -180,7 +181,7 @@ class TestQdrantLoader(unittest.TestCase):
         upload_to_qdrant(mock_client, "test_collection", texts, embeddings)
 
         mock_client.upsert.assert_called_once()
-        points = mock_client.upsert.call_args.kwargs['points']
+        points = mock_client.upsert.call_args.kwargs["points"]
         self.assertEqual(points[0].payload["text"], "Craftworld Iyandèn 🏛️")
         self.assertEqual(points[1].payload["text"], "T'au Empire")
 
@@ -192,7 +193,7 @@ class TestQdrantLoader(unittest.TestCase):
 
         upload_to_qdrant(mock_client, "test_collection", texts, embeddings)
 
-        points = mock_client.upsert.call_args.kwargs['points']
+        points = mock_client.upsert.call_args.kwargs["points"]
         ids = [point.id for point in points]
 
         # All IDs should be unique
@@ -215,5 +216,5 @@ class TestQdrantIntegration(unittest.TestCase):
         pass
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

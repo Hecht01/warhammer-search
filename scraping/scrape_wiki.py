@@ -37,11 +37,7 @@ def get_page_links(category_url: str, limit: int = 50) -> List[str]:
         print(f"Crawling: {next_page}")
 
         try:
-            response = requests.get(
-                next_page,
-                headers=HEADERS,
-                timeout=REQUEST_TIMEOUT
-            )
+            response = requests.get(next_page, headers=HEADERS, timeout=REQUEST_TIMEOUT)
             response.raise_for_status()
         except requests.RequestException as e:
             print(f"Failed to fetch {next_page}: {e}")
@@ -117,11 +113,7 @@ def scrape_articles(links: List[str], output_dir: str = DATA_DIR) -> None:
         retries = 0
         while retries < MAX_RETRIES:
             try:
-                response = requests.get(
-                    url,
-                    headers=HEADERS,
-                    timeout=REQUEST_TIMEOUT
-                )
+                response = requests.get(url, headers=HEADERS, timeout=REQUEST_TIMEOUT)
                 response.raise_for_status()
 
                 content = extract_main_content(response.text)
@@ -139,7 +131,7 @@ def scrape_articles(links: List[str], output_dir: str = DATA_DIR) -> None:
                 retries += 1
                 print(f"Failed to scrape {url} (attempt {retries}/{MAX_RETRIES}): {e}")
                 if retries < MAX_RETRIES:
-                    sleep(2 ** retries)  # Exponential backoff
+                    sleep(2**retries)  # Exponential backoff
             except OSError as e:
                 print(f"Failed to write {path}: {e}")
                 break

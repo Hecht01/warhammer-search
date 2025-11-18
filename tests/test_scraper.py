@@ -6,10 +6,12 @@ import sys
 import os
 
 # Add parent directory to path to import scraping module
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from scraping.scrape_wiki import (  # noqa: E402
-    get_page_links, extract_main_content, scrape_articles
+    get_page_links,
+    extract_main_content,
+    scrape_articles,
 )
 
 
@@ -67,7 +69,7 @@ class TestScraper(unittest.TestCase):
         content = extract_main_content("")
         self.assertEqual(content, "")
 
-    @patch('scraping.scrape_wiki.requests.get')
+    @patch("scraping.scrape_wiki.requests.get")
     def test_get_page_links_single_page(self, mock_get):
         """Test link extraction from a single page."""
         mock_response = Mock()
@@ -88,14 +90,16 @@ class TestScraper(unittest.TestCase):
         self.assertTrue(any("Article1" in link for link in links))
         self.assertTrue(any("Article2" in link for link in links))
 
-    @patch('scraping.scrape_wiki.requests.get')
+    @patch("scraping.scrape_wiki.requests.get")
     def test_get_page_links_respects_limit(self, mock_get):
         """Test that link extraction respects the limit parameter."""
         # Create HTML with 10 links
-        links_html = "\n".join([
-            f'<a class="category-page__member-link" href="/wiki/Article{i}">Article {i}</a>'
-            for i in range(10)
-        ])
+        links_html = "\n".join(
+            [
+                f'<a class="category-page__member-link" href="/wiki/Article{i}">Article {i}</a>'
+                for i in range(10)
+            ]
+        )
 
         mock_response = Mock()
         mock_response.text = f"<html><body>{links_html}</body></html>"
@@ -106,7 +110,7 @@ class TestScraper(unittest.TestCase):
 
         self.assertLessEqual(len(links), 5)
 
-    @patch('scraping.scrape_wiki.requests.get')
+    @patch("scraping.scrape_wiki.requests.get")
     def test_get_page_links_handles_request_failure(self, mock_get):
         """Test that link extraction handles request failures gracefully."""
         mock_get.side_effect = Exception("Network error")
@@ -120,11 +124,13 @@ class TestScraper(unittest.TestCase):
             # It's also acceptable to propagate certain errors
             pass
 
-    @patch('scraping.scrape_wiki.requests.get')
-    @patch('builtins.open', new_callable=mock_open)
-    @patch('os.path.exists')
-    @patch('os.makedirs')
-    def test_scrape_articles_success(self, mock_makedirs, mock_exists, mock_file, mock_get):
+    @patch("scraping.scrape_wiki.requests.get")
+    @patch("builtins.open", new_callable=mock_open)
+    @patch("os.path.exists")
+    @patch("os.makedirs")
+    def test_scrape_articles_success(
+        self, mock_makedirs, mock_exists, mock_file, mock_get
+    ):
         """Test successful article scraping."""
         mock_exists.return_value = False  # File doesn't exist yet
 
@@ -150,8 +156,8 @@ class TestScraper(unittest.TestCase):
         handle = mock_file()
         handle.write.assert_called()
 
-    @patch('scraping.scrape_wiki.requests.get')
-    @patch('os.path.exists')
+    @patch("scraping.scrape_wiki.requests.get")
+    @patch("os.path.exists")
     def test_scrape_articles_skips_existing(self, mock_exists, mock_get):
         """Test that scraping skips already-existing files."""
         mock_exists.return_value = True  # File already exists
@@ -162,12 +168,15 @@ class TestScraper(unittest.TestCase):
         # Should not make any HTTP requests
         mock_get.assert_not_called()
 
-    @patch('scraping.scrape_wiki.requests.get')
-    @patch('os.path.exists')
-    @patch('os.makedirs')
-    def test_scrape_articles_handles_request_failure(self, mock_makedirs, mock_exists, mock_get):
+    @patch("scraping.scrape_wiki.requests.get")
+    @patch("os.path.exists")
+    @patch("os.makedirs")
+    def test_scrape_articles_handles_request_failure(
+        self, mock_makedirs, mock_exists, mock_get
+    ):
         """Test that scraping handles request failures gracefully."""
         import requests
+
         mock_exists.return_value = False
         # Use requests.RequestException so the code catches it
         mock_get.side_effect = requests.RequestException("Network error")
@@ -181,12 +190,13 @@ class TestScraper(unittest.TestCase):
         # Verify that retries were attempted
         self.assertEqual(mock_get.call_count, 3)  # MAX_RETRIES = 3
 
-    @patch('scraping.scrape_wiki.requests.get')
-    @patch('builtins.open', new_callable=mock_open)
-    @patch('os.path.exists')
-    @patch('os.makedirs')
+    @patch("scraping.scrape_wiki.requests.get")
+    @patch("builtins.open", new_callable=mock_open)
+    @patch("os.path.exists")
+    @patch("os.makedirs")
     def test_scrape_articles_empty_content_warning(
-            self, mock_makedirs, mock_exists, mock_file, mock_get):
+        self, mock_makedirs, mock_exists, mock_file, mock_get
+    ):
         """Test that scraping warns on empty content extraction."""
         mock_exists.return_value = False
 
@@ -244,5 +254,5 @@ class TestScraperIntegration(unittest.TestCase):
         self.assertNotIn("See also", content)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

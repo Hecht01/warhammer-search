@@ -5,7 +5,7 @@ import sys
 import os
 
 # Add parent directory to path to import indexing module
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from indexing.chunking import chunk_text, chunk_documents  # noqa: E402
 
@@ -86,20 +86,20 @@ class TestChunking(unittest.TestCase):
         docs = [
             "First document with some text. It has multiple sentences.",
             "Second document also has text. Multiple sentences here too.",
-            "Third document is shorter."
+            "Third document is shorter.",
         ]
         result = chunk_documents(docs, chunk_size=50, overlap=10)
         self.assertIsInstance(result, list)
         self.assertGreater(len(result), 0)
         # Verify metadata
         for item in result:
-            self.assertIn('text', item)
-            self.assertIn('doc_index', item)
-            self.assertIn('chunk_index', item)
-            self.assertIn('total_chunks', item)
-            self.assertIsInstance(item['text'], str)
-            self.assertIsInstance(item['doc_index'], int)
-            self.assertIsInstance(item['chunk_index'], int)
+            self.assertIn("text", item)
+            self.assertIn("doc_index", item)
+            self.assertIn("chunk_index", item)
+            self.assertIn("total_chunks", item)
+            self.assertIsInstance(item["text"], str)
+            self.assertIsInstance(item["doc_index"], int)
+            self.assertIsInstance(item["chunk_index"], int)
 
     def test_chunk_documents_empty(self):
         """Test chunking empty document list."""
@@ -108,8 +108,10 @@ class TestChunking(unittest.TestCase):
 
     def test_unicode_text(self):
         """Test chunking with Unicode characters."""
-        text = ("This has émojis 🎮 and spëcial çharacters. "
-                "Multiple sentences here. More text follows.")
+        text = (
+            "This has émojis 🎮 and spëcial çharacters. "
+            "Multiple sentences here. More text follows."
+        )
         chunks = chunk_text(text, chunk_size=50, overlap=5)
         self.assertGreater(len(chunks), 0)
         for chunk in chunks:
@@ -122,5 +124,5 @@ class TestChunking(unittest.TestCase):
         self.assertGreater(len(chunks), 0)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()
