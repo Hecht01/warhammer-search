@@ -1,0 +1,11 @@
+# Test dependencies - minimal set without heavy ML packages
+# All tests use mocking so we don't need the actual implementations
+fastapi
+uvicorn
+requests
+beautifulsoup4
+numpy
+tqdm
+pytest
+httpx
+pydantic
