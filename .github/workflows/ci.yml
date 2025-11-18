@@ -11,16 +11,9 @@ jobs:
     name: Lint, Test, Build
     runs-on: ubuntu-latest
 
-    services:
-      qdrant:
-        image: qdrant/qdrant
-        ports:
-          - 6333:6333
-        options: >-
-          --health-cmd="wget --no-verbose --tries=1 --spider http://localhost:6333/ || exit 1"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=10
+    # Note: Qdrant service container removed because all current tests use mocking
+    # If integration tests are added later that need a real Qdrant instance,
+    # uncomment the services section below and fix the health check
 
     steps:
       - name: Checkout code
@@ -46,9 +39,6 @@ jobs:
           black --check .
 
       - name: Run tests
-        env:
-          QDRANT_HOST: localhost
-          QDRANT_PORT: 6333
         run: |
           pytest tests/ -v
 
