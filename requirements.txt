@@ -2,3 +2,9 @@ sentence-transformers
 qdrant-client
 fastapi
 uvicorn
+requests
+beautifulsoup4
+numpy
+tqdm
+pytest
+httpx
