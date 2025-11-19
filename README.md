@@ -1,10 +1,10 @@
-# ⚔️ Warhammer 40K Semantic Search Engine
+# Warhammer 40K Semantic Search Engine
 
 Comprehensive search and reference tool for Warhammer 40,000 with semantic lore search, books database, game rules, stratagems, and faction-organized navigation.
 
-## ✨ Features
+## Features
 
-### 🔍 Semantic Lore Search
+### Semantic Lore Search
 - Scrapes Warhammer 40K wiki articles (23 factions included)
 - Intelligent text chunking with sentence boundary detection
 - Embeddings via Sentence Transformers (all-MiniLM-L6-v2)
@@ -12,7 +12,7 @@ Comprehensive search and reference tool for Warhammer 40,000 with semantic lore 
 - Semantic search API with similarity scoring
 - Result highlighting and relevance scores
 
-### 📚 Books Database
+### Books Database
 - **40 curated Warhammer 40K books** with detailed metadata
 - Filter by **faction** (Space Marines, Chaos, Necrons, etc.)
 - Filter by **era** (30K Horus Heresy, 40K, 41K Era Indomitus)
@@ -25,7 +25,7 @@ Comprehensive search and reference tool for Warhammer 40,000 with semantic lore 
   - Ciaphas Cain
   - And many more!
 
-### 📋 Rules & Stratagems
+### Rules & Stratagems
 - **24 game rules** (12 core + 12 faction-specific)
 - **28 stratagems** across 8 factions
 - Filter by faction, phase, category, type, and CP cost
@@ -36,8 +36,8 @@ Comprehensive search and reference tool for Warhammer 40,000 with semantic lore 
   - Faction Rules (Oath of Moment, Reanimation Protocols, Waaagh!, etc.)
   - Stratagems organized by faction with full details
 
-### 🎯 Faction Navigation
-- **Interactive faction cards** with icons
+### Faction Navigation
+- **Interactive faction cards**
 - Browse all content organized by faction
 - See counts of books, rules, and stratagems per faction
 - Click any faction to view filtered content
@@ -46,7 +46,7 @@ Comprehensive search and reference tool for Warhammer 40,000 with semantic lore 
   - Aeldari, T'au Empire, Astra Militarum
   - And more!
 
-### 🎨 Web Interface
+### Web Interface
 - **Dark Warhammer 40K themed UI** with gold accents
 - 4 tabs: Lore Search, Books, Rules & Stratagems, Factions
 - Real-time search with query highlighting
@@ -54,7 +54,7 @@ Comprehensive search and reference tool for Warhammer 40,000 with semantic lore 
 - Loading states and error handling
 - Dual-panel layout for rules and stratagems
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Using Docker Compose (Recommended)
 
@@ -88,7 +88,7 @@ uvicorn api.search:app --reload
 open http://localhost:8000
 ```
 
-## 📡 API Endpoints
+## API Endpoints
 
 ### Lore Search
 ```bash
@@ -212,7 +212,7 @@ GET /health
 
 Returns API and Qdrant connection status.
 
-## 🛠️ Architecture
+## Architecture
 
 ```
 Web Scraper → Text Chunking → Embeddings → Qdrant → FastAPI → Web UI
@@ -223,9 +223,9 @@ Web Scraper → Text Chunking → Embeddings → Qdrant → FastAPI → Web UI
 - **Embeddings**: all-MiniLM-L6-v2 (384-dimensional vectors)
 - **Vector DB**: Qdrant for similarity search
 - **API**: FastAPI with Pydantic models
-- **Frontend**: Vanilla JavaScript with dark theme
+- **Frontend**: Svelte 4 with Vite build system, dark themed UI
 
-## 📊 Data Included
+## Data Included
 
 ### Factions (13 unique)
 Space Marines, Chaos, Chaos Space Marines, Necrons, Orks, Tyranids, Aeldari, T'au Empire, Astra Militarum, Adeptus Mechanicus, Imperium, Genestealer Cults, Drukhari
@@ -250,7 +250,7 @@ Organized across popular series and standalone novels from authors like Dan Abne
 - T'au Empire: 3 stratagems
 - Astra Militarum: 3 stratagems
 
-## 🧪 Testing
+## Testing
 
 ```bash
 # Run all tests
@@ -263,7 +263,47 @@ pytest --cov=. --cov-report=html
 pytest tests/test_api.py -v
 ```
 
-## 🏗️ Future Features
+## Frontend Development
+
+The web UI is built with Svelte 4 and compiled with Vite. The source code is in the `frontend/` directory.
+
+### Building the Frontend
+
+```bash
+# Navigate to frontend directory
+cd frontend
+
+# Install dependencies
+npm install
+
+# Development mode (hot reload)
+npm run dev
+
+# Build for production
+npm run build
+```
+
+The production build outputs to the `static/` directory, which FastAPI serves automatically.
+
+### Frontend Structure
+
+```
+frontend/
+├── src/
+│   ├── App.svelte              # Main app with tab navigation
+│   ├── components/
+│   │   ├── LoreSearch.svelte   # Semantic search interface
+│   │   ├── Books.svelte        # Books browser with filters
+│   │   ├── Rules.svelte        # Rules and stratagems display
+│   │   └── Factions.svelte     # Faction navigation cards
+│   ├── app.css                 # Global styles
+│   └── main.js                 # App entry point
+├── index.html                  # HTML template
+├── vite.config.js              # Vite build configuration
+└── package.json                # Node.js dependencies
+```
+
+## Future Features
 - ✅ ~~Find 40k Books for your favorite factions~~ **DONE!**
 - ✅ ~~Web UI~~ **DONE!**
 - ✅ ~~Search for Warhammer 40K Rules~~ **DONE!**
@@ -277,7 +317,7 @@ pytest tests/test_api.py -v
 - Army list builder integration
 - Paint scheme recommendations by faction
 
-## 🤝 Contributing
+## Contributing
 
 Contributions welcome! Areas to expand:
 - Add more books to the database
@@ -287,6 +327,6 @@ Contributions welcome! Areas to expand:
 - Improve UI/UX and mobile experience
 - Add user authentication for saved searches
 
-## 📝 License
+## License
 
 This is a fan project for educational and community purposes. All Warhammer 40,000 content is owned by Games Workshop.
