@@ -1,10 +1,10 @@
-# ⚔️ Warhammer 40K Semantic Search Engine
+# Warhammer 40K Semantic Search Engine
 
-Semantic search over the Warhammer 40K universe using Qdrant and Sentence Transformers. Features a dark-themed web UI and comprehensive books database organized by faction.
+Comprehensive search and reference tool for Warhammer 40,000 with semantic lore search, books database, game rules, stratagems, and faction-organized navigation.
 
-## ✨ Features
+## Features
 
-### 🔍 Semantic Lore Search
+### Semantic Lore Search
 - Scrapes Warhammer 40K wiki articles (23 factions included)
 - Intelligent text chunking with sentence boundary detection
 - Embeddings via Sentence Transformers (all-MiniLM-L6-v2)
@@ -12,7 +12,7 @@ Semantic search over the Warhammer 40K universe using Qdrant and Sentence Transf
 - Semantic search API with similarity scoring
 - Result highlighting and relevance scores
 
-### 📚 Books Database
+### Books Database
 - **40 curated Warhammer 40K books** with detailed metadata
 - Filter by **faction** (Space Marines, Chaos, Necrons, etc.)
 - Filter by **era** (30K Horus Heresy, 40K, 41K Era Indomitus)
@@ -25,14 +25,36 @@ Semantic search over the Warhammer 40K universe using Qdrant and Sentence Transf
   - Ciaphas Cain
   - And many more!
 
-### 🎨 Web Interface
+### Rules & Stratagems
+- **24 game rules** (12 core + 12 faction-specific)
+- **28 stratagems** across 8 factions
+- Filter by faction, phase, category, type, and CP cost
+- Search by keyword across rule descriptions
+- Quick reference for gameplay
+- Includes:
+  - Core Rules (Movement, Shooting, Charging, etc.)
+  - Faction Rules (Oath of Moment, Reanimation Protocols, Waaagh!, etc.)
+  - Stratagems organized by faction with full details
+
+### Faction Navigation
+- **Interactive faction cards**
+- Browse all content organized by faction
+- See counts of books, rules, and stratagems per faction
+- Click any faction to view filtered content
+- 13 factions covered:
+  - Space Marines, Chaos, Necrons, Orks, Tyranids
+  - Aeldari, T'au Empire, Astra Militarum
+  - And more!
+
+### Web Interface
 - **Dark Warhammer 40K themed UI** with gold accents
-- Tabbed interface for Lore Search and Books
+- 4 tabs: Lore Search, Books, Rules & Stratagems, Factions
 - Real-time search with query highlighting
 - Responsive design (mobile & desktop)
 - Loading states and error handling
+- Dual-panel layout for rules and stratagems
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Using Docker Compose (Recommended)
 
@@ -66,7 +88,7 @@ uvicorn api.search:app --reload
 open http://localhost:8000
 ```
 
-## 📡 API Endpoints
+## API Endpoints
 
 ### Lore Search
 ```bash
@@ -115,6 +137,74 @@ Returns books filtered by criteria.
 ]
 ```
 
+### Rules
+```bash
+GET /rules?faction=Space%20Marines&phase=Command
+```
+
+Returns game rules filtered by criteria.
+
+**Parameters:**
+- `q` (optional): Search by rule name or description
+- `faction` (optional): Filter by faction (omit for core rules)
+- `category` (optional): Filter by category (Core Rules, Faction)
+- `phase` (optional): Filter by phase (Command, Movement, Shooting, etc.)
+
+**Response:**
+```json
+[
+  {
+    "name": "Oath of Moment",
+    "category": "Faction",
+    "faction": "Space Marines",
+    "description": "At start of your Command phase, select one enemy unit...",
+    "phase": "Command"
+  }
+]
+```
+
+### Stratagems
+```bash
+GET /stratagems?faction=Necrons&max_cost=2
+```
+
+Returns stratagems filtered by criteria.
+
+**Parameters:**
+- `q` (optional): Search by stratagem name or effect
+- `faction` (optional): Filter by faction
+- `type` (optional): Filter by type (Battle Tactic, Strategic Ploy, etc.)
+- `phase` (optional): Filter by phase
+- `max_cost` (optional): Maximum CP cost
+
+**Response:**
+```json
+[
+  {
+    "name": "Resurrection Protocols",
+    "faction": "Necrons",
+    "cost": 1,
+    "type": "Epic Deed",
+    "when": "End of your Command phase",
+    "target": "One Necrons unit from your army",
+    "effect": "Return D3 destroyed models to that unit...",
+    "phase": "Command"
+  }
+]
+```
+
+### Factions
+```bash
+GET /factions
+```
+
+Returns list of all available factions.
+
+**Response:**
+```json
+["Aeldari", "Astra Militarum", "Chaos", "Chaos Space Marines", "Necrons", ...]
+```
+
 ### Health Check
 ```bash
 GET /health
@@ -122,7 +212,7 @@ GET /health
 
 Returns API and Qdrant connection status.
 
-## 🛠️ Architecture
+## Architecture
 
 ```
 Web Scraper → Text Chunking → Embeddings → Qdrant → FastAPI → Web UI
@@ -133,17 +223,34 @@ Web Scraper → Text Chunking → Embeddings → Qdrant → FastAPI → Web UI
 - **Embeddings**: all-MiniLM-L6-v2 (384-dimensional vectors)
 - **Vector DB**: Qdrant for similarity search
 - **API**: FastAPI with Pydantic models
-- **Frontend**: Vanilla JavaScript with dark theme
+- **Frontend**: Svelte 4 with Vite build system, dark themed UI
 
-## 📊 Data Included
+## Data Included
 
-### Factions (23 total)
-Space Marines, Chaos, Necrons, Orks, Tyranids, Aeldari, T'au Empire, Imperium, Astra Militarum, Adeptus Mechanicus, and more!
+### Factions (13 unique)
+Space Marines, Chaos, Chaos Space Marines, Necrons, Orks, Tyranids, Aeldari, T'au Empire, Astra Militarum, Adeptus Mechanicus, Imperium, Genestealer Cults, Drukhari
+
+### Lore Articles (23 factions)
+Full wiki articles for Space Marines, Chaos, Necrons, Orks, Tyranids, Aeldari, T'au Empire, Imperium, Astra Militarum, Adeptus Mechanicus, and more!
 
 ### Books (40 total)
 Organized across popular series and standalone novels from authors like Dan Abnett, Graham McNeill, Aaron Dembski-Bowden, and more.
 
-## 🧪 Testing
+### Game Rules (24 total)
+- **12 Core Rules**: Movement, Shooting, Charging, Cover, Invulnerable Saves, etc.
+- **12 Faction Rules**: Oath of Moment, Reanimation Protocols, Waaagh!, Synapse, For the Greater Good, etc.
+
+### Stratagems (28 total)
+- Space Marines: 4 stratagems
+- Chaos Space Marines: 3 stratagems
+- Necrons: 4 stratagems
+- Orks: 4 stratagems
+- Tyranids: 3 stratagems
+- Aeldari: 3 stratagems
+- T'au Empire: 3 stratagems
+- Astra Militarum: 3 stratagems
+
+## Testing
 
 ```bash
 # Run all tests
@@ -156,23 +263,70 @@ pytest --cov=. --cov-report=html
 pytest tests/test_api.py -v
 ```
 
-## 🏗️ Future Features
+## Frontend Development
+
+The web UI is built with Svelte 4 and compiled with Vite. The source code is in the `frontend/` directory.
+
+### Building the Frontend
+
+```bash
+# Navigate to frontend directory
+cd frontend
+
+# Install dependencies
+npm install
+
+# Development mode (hot reload)
+npm run dev
+
+# Build for production
+npm run build
+```
+
+The production build outputs to the `static/` directory, which FastAPI serves automatically.
+
+### Frontend Structure
+
+```
+frontend/
+├── src/
+│   ├── App.svelte              # Main app with tab navigation
+│   ├── components/
+│   │   ├── LoreSearch.svelte   # Semantic search interface
+│   │   ├── Books.svelte        # Books browser with filters
+│   │   ├── Rules.svelte        # Rules and stratagems display
+│   │   └── Factions.svelte     # Faction navigation cards
+│   ├── app.css                 # Global styles
+│   └── main.js                 # App entry point
+├── index.html                  # HTML template
+├── vite.config.js              # Vite build configuration
+└── package.json                # Node.js dependencies
+```
+
+## Future Features
 - ✅ ~~Find 40k Books for your favorite factions~~ **DONE!**
 - ✅ ~~Web UI~~ **DONE!**
-- Search for Warhammer 40K Rules (datasheets, core rules)
-- Find Stratagems quickly by faction
+- ✅ ~~Search for Warhammer 40K Rules~~ **DONE!**
+- ✅ ~~Find Stratagems quickly by faction~~ **DONE!**
+- ✅ ~~Faction-organized navigation~~ **DONE!**
+- Add unit datasheets database
+- Expand rules to include weapon profiles
 - Multi-modal search (image → lore)
-- Q&A system with citations
-- Timeline visualization
+- Q&A system with citations using RAG
+- Timeline visualization with M30-M42 events
+- Army list builder integration
+- Paint scheme recommendations by faction
 
-## 🤝 Contributing
+## Contributing
 
 Contributions welcome! Areas to expand:
 - Add more books to the database
-- Scrape additional content sources
-- Implement rules/stratagems database
-- Improve UI/UX
+- Expand rules and stratagems coverage
+- Add unit datasheets and weapon profiles
+- Scrape additional content sources (Lexicanum, 1d4chan)
+- Improve UI/UX and mobile experience
+- Add user authentication for saved searches
 
-## 📝 License
+## License
 
 This is a fan project for educational and community purposes. All Warhammer 40,000 content is owned by Games Workshop.
