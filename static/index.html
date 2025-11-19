@@ -17,6 +17,8 @@
         <nav class="tabs">
             <button class="tab-button active" data-tab="lore">Lore Search</button>
             <button class="tab-button" data-tab="books">Books</button>
+            <button class="tab-button" data-tab="rules">Rules & Stratagems</button>
+            <button class="tab-button" data-tab="factions">Factions</button>
         </nav>
 
         <!-- Lore Search Tab -->
@@ -89,6 +91,100 @@
             </div>
 
             <div id="books-results" class="books-results"></div>
+        </div>
+
+        <!-- Rules & Stratagems Tab -->
+        <div id="rules-tab" class="tab-content">
+            <div class="rules-sections">
+                <!-- Rules Section -->
+                <div class="rules-section">
+                    <h3>📋 Game Rules</h3>
+                    <div class="search-box">
+                        <input
+                            type="text"
+                            id="rules-search-input"
+                            placeholder="Search rules..."
+                            autocomplete="off"
+                        >
+                        <button id="rules-search-button">Search</button>
+                    </div>
+
+                    <div class="filters">
+                        <label for="rules-faction-filter">Faction:</label>
+                        <select id="rules-faction-filter">
+                            <option value="">All (Core + Faction Rules)</option>
+                        </select>
+
+                        <label for="rules-category-filter">Category:</label>
+                        <select id="rules-category-filter">
+                            <option value="">All Categories</option>
+                            <option value="Core Rules">Core Rules</option>
+                            <option value="Faction">Faction Rules</option>
+                        </select>
+
+                        <label for="rules-phase-filter">Phase:</label>
+                        <select id="rules-phase-filter">
+                            <option value="">All Phases</option>
+                            <option value="Command">Command</option>
+                            <option value="Movement">Movement</option>
+                            <option value="Shooting">Shooting</option>
+                            <option value="Charge">Charge</option>
+                            <option value="Fight">Fight</option>
+                            <option value="Morale">Morale</option>
+                        </select>
+                    </div>
+
+                    <div id="rules-results" class="rules-results"></div>
+                </div>
+
+                <!-- Stratagems Section -->
+                <div class="rules-section">
+                    <h3>⚡ Stratagems</h3>
+                    <div class="search-box">
+                        <input
+                            type="text"
+                            id="strats-search-input"
+                            placeholder="Search stratagems..."
+                            autocomplete="off"
+                        >
+                        <button id="strats-search-button">Search</button>
+                    </div>
+
+                    <div class="filters">
+                        <label for="strats-faction-filter">Faction:</label>
+                        <select id="strats-faction-filter">
+                            <option value="">All Factions</option>
+                        </select>
+
+                        <label for="strats-type-filter">Type:</label>
+                        <select id="strats-type-filter">
+                            <option value="">All Types</option>
+                            <option value="Battle Tactic">Battle Tactic</option>
+                            <option value="Strategic Ploy">Strategic Ploy</option>
+                            <option value="Epic Deed">Epic Deed</option>
+                            <option value="Wargear">Wargear</option>
+                        </select>
+
+                        <label for="strats-cost-filter">Max CP:</label>
+                        <select id="strats-cost-filter">
+                            <option value="">Any Cost</option>
+                            <option value="1">1 CP</option>
+                            <option value="2">2 CP</option>
+                            <option value="3">3 CP</option>
+                        </select>
+                    </div>
+
+                    <div id="strats-results" class="strats-results"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Factions Tab -->
+        <div id="factions-tab" class="tab-content">
+            <h3 style="text-align: center; margin-bottom: 30px; color: var(--accent-gold);">
+                Browse by Faction
+            </h3>
+            <div id="faction-cards" class="faction-cards"></div>
         </div>
 
         <footer>
