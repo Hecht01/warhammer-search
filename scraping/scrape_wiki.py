@@ -1,43 +1,74 @@
+"""Web scraper for extracting Warhammer 40K lore from the Fandom wiki."""
+
+from typing import List, Set, Optional
 import requests
 from bs4 import BeautifulSoup
 from time import sleep
 from tqdm import tqdm
 import os
-import re
 
 BASE_URL = "https://warhammer40k.fandom.com"
 HEADERS = {"User-Agent": "Mozilla/5.0"}
 DATA_DIR = "../data/raw"
+REQUEST_TIMEOUT = 30  # seconds
+MAX_RETRIES = 3
 
 os.makedirs(DATA_DIR, exist_ok=True)
 
 
-def get_page_links(category_url: str, limit: int = 50):
+def get_page_links(category_url: str, limit: int = 50) -> List[str]:
     """
-    Crawl a category page and extract article links.
+    Crawl a category page and extract article links with pagination.
+
+    Args:
+        category_url: URL of the category page to crawl
+        limit: Maximum number of links to extract
+
+    Returns:
+        List of article URLs
+
+    Raises:
+        requests.RequestException: If HTTP request fails
     """
-    links = set()
-    next_page = category_url
+    links: Set[str] = set()
+    next_page: Optional[str] = category_url
 
     while next_page and len(links) < limit:
         print(f"Crawling: {next_page}")
-        response = requests.get(next_page, headers=HEADERS)
+
+        try:
+            response = requests.get(next_page, headers=HEADERS, timeout=REQUEST_TIMEOUT)
+            response.raise_for_status()
+        except requests.RequestException as e:
+            print(f"Failed to fetch {next_page}: {e}")
+            break
+
         soup = BeautifulSoup(response.text, "html.parser")
 
+        # Extract article links
         for a in soup.select(".category-page__member-link"):
             href = a.get("href")
             if href:
                 links.add(BASE_URL + href)
 
-        # Pagination
+        # Handle pagination
         next_button = soup.select_one(".category-page__pagination-next")
         next_page = BASE_URL + next_button.get("href") if next_button else None
-        sleep(1)
+        sleep(1)  # Rate limiting
 
     return list(links)[:limit]
 
 
 def extract_main_content(html: str) -> str:
+    """
+    Extract main text content from a wiki article HTML.
+
+    Args:
+        html: Raw HTML string of the article
+
+    Returns:
+        Cleaned text content with paragraphs and headings
+    """
     soup = BeautifulSoup(html, "html.parser")
 
     # Remove unwanted sections
@@ -48,7 +79,7 @@ def extract_main_content(html: str) -> str:
     if not content_div:
         return ""
 
-    paragraphs = []
+    paragraphs: List[str] = []
     for elem in content_div.find_all(["p", "h2", "h3"]):
         text = elem.get_text(separator=" ", strip=True)
         if text and not text.lower().startswith("see also"):
@@ -58,28 +89,56 @@ def extract_main_content(html: str) -> str:
     return clean_text
 
 
-def scrape_articles(links: list[str]):
+def scrape_articles(links: List[str], output_dir: str = DATA_DIR) -> None:
+    """
+    Scrape articles from the given URLs and save to text files.
+
+    Args:
+        links: List of article URLs to scrape
+        output_dir: Directory to save scraped content
+
+    Raises:
+        OSError: If file writing fails
+    """
+    os.makedirs(output_dir, exist_ok=True)
+
     for url in tqdm(links, desc="Scraping articles"):
         title = url.split("/")[-1]
-        path = os.path.join(DATA_DIR, f"{title}.txt")
+        path = os.path.join(output_dir, f"{title}.txt")
 
+        # Skip if already scraped
         if os.path.exists(path):
             continue
 
-        try:
-            response = requests.get(url, headers=HEADERS)
-            content = extract_main_content(response.text)
+        retries = 0
+        while retries < MAX_RETRIES:
+            try:
+                response = requests.get(url, headers=HEADERS, timeout=REQUEST_TIMEOUT)
+                response.raise_for_status()
 
-            with open(path, "w", encoding="utf-8") as f:
-                f.write(content)
+                content = extract_main_content(response.text)
 
-            sleep(1)
-        except Exception as e:
-            print(f"Failed to scrape {url}: {e}")
+                if content:
+                    with open(path, "w", encoding="utf-8") as f:
+                        f.write(content)
+                else:
+                    print(f"Warning: No content extracted from {url}")
+
+                sleep(1)  # Rate limiting
+                break  # Success, exit retry loop
+
+            except requests.RequestException as e:
+                retries += 1
+                print(f"Failed to scrape {url} (attempt {retries}/{MAX_RETRIES}): {e}")
+                if retries < MAX_RETRIES:
+                    sleep(2**retries)  # Exponential backoff
+            except OSError as e:
+                print(f"Failed to write {path}: {e}")
+                break
 
 
 if __name__ == "__main__":
-    #For the MVP we only scrape the basic lore about each faction
+    # For the MVP we only scrape the basic lore about each faction
     category_url = f"{BASE_URL}/wiki/Category:Factions"
     article_links = get_page_links(category_url, limit=50)
 

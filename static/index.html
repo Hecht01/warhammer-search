@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Warhammer 40K Search Engine</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>⚔️ WARHAMMER 40,000 ⚔️</h1>
+            <h2>SEMANTIC SEARCH ENGINE</h2>
+            <p class="tagline">In the grim darkness of the far future, there is only search...</p>
+        </header>
+
+        <nav class="tabs">
+            <button class="tab-button active" data-tab="lore">Lore Search</button>
+            <button class="tab-button" data-tab="books">Books</button>
+        </nav>
+
+        <!-- Lore Search Tab -->
+        <div id="lore-tab" class="tab-content active">
+            <div class="search-box">
+                <input
+                    type="text"
+                    id="search-input"
+                    placeholder="Search the grimdark lore... (e.g., Emperor, Necrons, Horus Heresy)"
+                    autocomplete="off"
+                >
+                <button id="search-button">Search</button>
+            </div>
+
+            <div class="filters">
+                <label for="result-limit">Results:</label>
+                <select id="result-limit">
+                    <option value="5">5</option>
+                    <option value="10" selected>10</option>
+                    <option value="20">20</option>
+                    <option value="50">50</option>
+                </select>
+            </div>
+
+            <div id="loading" class="loading hidden">
+                <div class="spinner"></div>
+                <p>Consulting the Emperor's Tarot...</p>
+            </div>
+
+            <div id="results" class="results"></div>
+        </div>
+
+        <!-- Books Tab -->
+        <div id="books-tab" class="tab-content">
+            <div class="search-box">
+                <input
+                    type="text"
+                    id="books-search-input"
+                    placeholder="Search books by title, author, or faction..."
+                    autocomplete="off"
+                >
+                <button id="books-search-button">Search Books</button>
+            </div>
+
+            <div class="filters">
+                <label for="faction-filter">Faction:</label>
+                <select id="faction-filter">
+                    <option value="">All Factions</option>
+                    <option value="Space Marines">Space Marines</option>
+                    <option value="Imperium">Imperium</option>
+                    <option value="Chaos">Chaos</option>
+                    <option value="Chaos Space Marines">Chaos Space Marines</option>
+                    <option value="Necrons">Necrons</option>
+                    <option value="Aeldari">Aeldari</option>
+                    <option value="Tau">T'au Empire</option>
+                    <option value="Orks">Orks</option>
+                    <option value="Tyranids">Tyranids</option>
+                    <option value="Genestealer Cults">Genestealer Cults</option>
+                    <option value="Adeptus Mechanicus">Adeptus Mechanicus</option>
+                    <option value="Astra Militarum">Astra Militarum</option>
+                </select>
+
+                <label for="era-filter">Era:</label>
+                <select id="era-filter">
+                    <option value="">All Eras</option>
+                    <option value="30K">Horus Heresy (30K)</option>
+                    <option value="40K">40K</option>
+                    <option value="41K">Era Indomitus (41K+)</option>
+                </select>
+            </div>
+
+            <div id="books-results" class="books-results"></div>
+        </div>
+
+        <footer>
+            <p>Powered by Sentence Transformers + Qdrant Vector Database</p>
+            <p>Data sourced from Warhammer 40K Fandom Wiki</p>
+        </footer>
+    </div>
+
+    <script src="/static/js/app.js"></script>
+</body>
+</html>
