@@ -57,7 +57,9 @@ class Rule(BaseModel):
     category: str  # "Core Rules", "Movement", "Shooting", "Melee", "Faction"
     faction: Optional[str] = None  # None for core rules
     description: str
-    phase: Optional[str] = None  # "Command", "Movement", "Shooting", "Charge", "Fight", "Morale"
+    phase: Optional[str] = (
+        None  # "Command", "Movement", "Shooting", "Charge", "Fight", "Morale"
+    )
 
 
 class Stratagem(BaseModel):
@@ -571,7 +573,7 @@ RULES_DATABASE: List[Rule] = [
         category="Faction",
         faction="Necrons",
         description="At start of Command phase, select one protocol to be active. "
-        "Affects all Necron units within 6\" of a Character.",
+        'Affects all Necron units within 6" of a Character.',
         phase="Command",
     ),
     # Orks
@@ -587,7 +589,7 @@ RULES_DATABASE: List[Rule] = [
         name="Mob Rule",
         category="Faction",
         faction="Orks",
-        description="Ork units within 6\" of 10+ friendly Ork models automatically "
+        description='Ork units within 6" of 10+ friendly Ork models automatically '
         "pass Battle-shock tests.",
         phase="Morale",
     ),
@@ -596,7 +598,7 @@ RULES_DATABASE: List[Rule] = [
         name="Synapse",
         category="Faction",
         faction="Tyranids",
-        description="Tyranid units within 6\" of a Synapse creature automatically pass "
+        description='Tyranid units within 6" of a Synapse creature automatically pass '
         "Battle-shock tests and can use Synapse abilities.",
         phase=None,
     ),
@@ -604,7 +606,7 @@ RULES_DATABASE: List[Rule] = [
         name="Shadow in the Warp",
         category="Faction",
         faction="Tyranids",
-        description="Enemy Psykers within 12\" of Tyranid units subtract 1 from "
+        description='Enemy Psykers within 12" of Tyranid units subtract 1 from '
         "Psychic tests and suffer Perils on any double.",
         phase=None,
     ),
@@ -623,7 +625,7 @@ RULES_DATABASE: List[Rule] = [
         category="Faction",
         faction="Tau",
         description="Units can make Supporting Fire when friendly unit is charged "
-        "within 6\". Fire Overwatch at BS 5+ even if not target of charge.",
+        'within 6". Fire Overwatch at BS 5+ even if not target of charge.',
         phase="Charge",
     ),
     Rule(
@@ -658,7 +660,7 @@ STRATAGEMS_DATABASE: List[Stratagem] = [
         type="Strategic Ploy",
         when="Your Shooting phase",
         target="One Space Marines Infantry unit",
-        effect="Bolt weapons in this unit have Range increased by 6\" and gain Sustained "
+        effect='Bolt weapons in this unit have Range increased by 6" and gain Sustained '
         "Hits 1 until end of phase.",
         phase="Shooting",
     ),
@@ -766,7 +768,7 @@ STRATAGEMS_DATABASE: List[Stratagem] = [
         cost=1,
         type="Strategic Ploy",
         when="End of your Movement phase",
-        target="Two Ork Infantry units within 2\" of each other",
+        target='Two Ork Infantry units within 2" of each other',
         effect="Merge both units into one. Combined unit gains benefits of larger mob.",
         phase="Movement",
     ),
@@ -777,7 +779,7 @@ STRATAGEMS_DATABASE: List[Stratagem] = [
         type="Strategic Ploy",
         when="Your Movement phase",
         target="One Ork Infantry unit",
-        effect="Remove unit from battlefield and set up anywhere more than 9\" from "
+        effect='Remove unit from battlefield and set up anywhere more than 9" from '
         "enemy models. Counts as Remaining Stationary.",
         phase="Movement",
     ),
@@ -830,7 +832,7 @@ STRATAGEMS_DATABASE: List[Stratagem] = [
         type="Strategic Ploy",
         when="Your Movement phase",
         target="One Tyranids unit",
-        effect="That unit can Advance and still Shoot and Charge this turn. +2\" to "
+        effect='That unit can Advance and still Shoot and Charge this turn. +2" to '
         "Advance and Charge rolls.",
         phase="Movement",
     ),
@@ -864,7 +866,7 @@ STRATAGEMS_DATABASE: List[Stratagem] = [
         type="Strategic Ploy",
         when="End of opponent's Movement phase",
         target="One Aeldari unit",
-        effect="Remove unit from battlefield and redeploy anywhere more than 6\" from "
+        effect='Remove unit from battlefield and redeploy anywhere more than 6" from '
         "enemy models.",
         phase="Movement",
     ),
@@ -909,7 +911,7 @@ STRATAGEMS_DATABASE: List[Stratagem] = [
         cost=1,
         type="Battle Tactic",
         when="Your Shooting phase",
-        target="One Astra Militarum Infantry unit within 6\" of an Officer",
+        target='One Astra Militarum Infantry unit within 6" of an Officer',
         effect="Add 1 to Hit rolls and weapons gain Lethal Hits until end of phase.",
         phase="Shooting",
     ),
@@ -988,8 +990,12 @@ def get_books(
 
 @app.get("/rules", response_model=List[Rule])
 def get_rules(
-    q: Optional[str] = Query(None, description="Search query for rule name or description"),
-    faction: Optional[str] = Query(None, description="Filter by faction (empty for core rules)"),
+    q: Optional[str] = Query(
+        None, description="Search query for rule name or description"
+    ),
+    faction: Optional[str] = Query(
+        None, description="Filter by faction (empty for core rules)"
+    ),
     category: Optional[str] = Query(None, description="Filter by category"),
     phase: Optional[str] = Query(None, description="Filter by phase"),
 ) -> List[Rule]:
@@ -1013,8 +1019,7 @@ def get_rules(
         results = [
             rule
             for rule in results
-            if q_lower in rule.name.lower()
-            or q_lower in rule.description.lower()
+            if q_lower in rule.name.lower() or q_lower in rule.description.lower()
         ]
 
     # Filter by faction
@@ -1034,7 +1039,9 @@ def get_rules(
 
 @app.get("/stratagems", response_model=List[Stratagem])
 def get_stratagems(
-    q: Optional[str] = Query(None, description="Search query for stratagem name or effect"),
+    q: Optional[str] = Query(
+        None, description="Search query for stratagem name or effect"
+    ),
     faction: Optional[str] = Query(None, description="Filter by faction"),
     type: Optional[str] = Query(None, description="Filter by type"),
     phase: Optional[str] = Query(None, description="Filter by phase"),
