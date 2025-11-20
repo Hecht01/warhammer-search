@@ -22,11 +22,13 @@ else
     echo "✓ Rules data already exists, skipping scrape"
 fi
 
-# Always scrape lore (it's quick and important)
-if [ -d "/app/data/raw" ]; then
-    echo "📖 Lore files found in /app/data/raw"
+# Scrape lore from Warhammer 40K wiki
+LORE_FILE_COUNT=$(find /app/data/raw -name "*.txt" 2>/dev/null | wc -l)
+if [ "$FORCE_SCRAPE" = "true" ] || [ "$LORE_FILE_COUNT" -lt 10 ]; then
+    echo "📖 Scraping lore from Warhammer 40K wiki..."
+    python -m scraping.scrape_wiki || echo "⚠️  Lore scraping failed, continuing..."
 else
-    echo "⚠️  No lore files found. Run scraping/scrape_wiki.py manually if needed."
+    echo "✓ Lore data already exists ($LORE_FILE_COUNT files), skipping scrape"
 fi
 
 echo "========================================="
