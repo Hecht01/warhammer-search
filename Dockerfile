@@ -23,4 +23,4 @@ RUN chmod +x ./scripts/startup.sh
 EXPOSE 8000
 
 # Run startup script (scrapes data, then starts API)
-CMD ["./scripts/startup.sh"]
+CMD ["/bin/bash", "./scripts/startup.sh"]
