@@ -12,7 +12,9 @@ COPY ./indexing ./indexing
 COPY ./scraping ./scraping
 COPY ./scripts ./scripts
 COPY ./static ./static
-COPY ./data ./data
+
+# Create data directories for scrapers to write to
+RUN mkdir -p /app/data/raw
 
 # Make startup script executable
 RUN chmod +x ./scripts/startup.sh

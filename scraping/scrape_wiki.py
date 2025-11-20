@@ -4,12 +4,16 @@ from typing import List, Set, Optional
 import requests
 from bs4 import BeautifulSoup
 from time import sleep
-from tqdm import tqdm
 import os
+import logging
+from pathlib import Path
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 BASE_URL = "https://warhammer40k.fandom.com"
 HEADERS = {"User-Agent": "Mozilla/5.0"}
-DATA_DIR = "../data/raw"
+DATA_DIR = Path(__file__).parent.parent / "data" / "raw"
 REQUEST_TIMEOUT = 30  # seconds
 MAX_RETRIES = 3
 
@@ -34,13 +38,13 @@ def get_page_links(category_url: str, limit: int = 50) -> List[str]:
     next_page: Optional[str] = category_url
 
     while next_page and len(links) < limit:
-        print(f"Crawling: {next_page}")
+        logger.info(f"Crawling: {next_page}")
 
         try:
             response = requests.get(next_page, headers=HEADERS, timeout=REQUEST_TIMEOUT)
             response.raise_for_status()
         except requests.RequestException as e:
-            print(f"Failed to fetch {next_page}: {e}")
+            logger.error(f"Failed to fetch {next_page}: {e}")
             break
 
         soup = BeautifulSoup(response.text, "html.parser")
@@ -89,7 +93,7 @@ def extract_main_content(html: str) -> str:
     return clean_text
 
 
-def scrape_articles(links: List[str], output_dir: str = DATA_DIR) -> None:
+def scrape_articles(links: List[str], output_dir: Path = DATA_DIR) -> None:
     """
     Scrape articles from the given URLs and save to text files.
 
@@ -102,7 +106,8 @@ def scrape_articles(links: List[str], output_dir: str = DATA_DIR) -> None:
     """
     os.makedirs(output_dir, exist_ok=True)
 
-    for url in tqdm(links, desc="Scraping articles"):
+    logger.info(f"Scraping {len(links)} articles...")
+    for idx, url in enumerate(links, 1):
         title = url.split("/")[-1]
         path = os.path.join(output_dir, f"{title}.txt")
 
@@ -121,25 +126,50 @@ def scrape_articles(links: List[str], output_dir: str = DATA_DIR) -> None:
                 if content:
                     with open(path, "w", encoding="utf-8") as f:
                         f.write(content)
+                    logger.info(f"[{idx}/{len(links)}] Scraped: {title}")
                 else:
-                    print(f"Warning: No content extracted from {url}")
+                    logger.warning(f"No content extracted from {url}")
 
                 sleep(1)  # Rate limiting
                 break  # Success, exit retry loop
 
             except requests.RequestException as e:
                 retries += 1
-                print(f"Failed to scrape {url} (attempt {retries}/{MAX_RETRIES}): {e}")
+                logger.error(f"Failed to scrape {url} (attempt {retries}/{MAX_RETRIES}): {e}")
                 if retries < MAX_RETRIES:
                     sleep(2**retries)  # Exponential backoff
             except OSError as e:
-                print(f"Failed to write {path}: {e}")
+                logger.error(f"Failed to write {path}: {e}")
                 break
 
 
 if __name__ == "__main__":
-    # For the MVP we only scrape the basic lore about each faction
-    category_url = f"{BASE_URL}/wiki/Category:Factions"
-    article_links = get_page_links(category_url, limit=50)
+    logger.info("Starting Warhammer 40K lore scraping...")
 
-    scrape_articles(article_links)
+    # Scrape multiple categories for comprehensive lore coverage
+    categories = [
+        ("Factions", 30),
+        ("Characters", 20),
+        ("Planets", 15),
+        ("Space_Marine_Chapters", 20),
+        ("Chaos_Space_Marine_Legions", 10),
+        ("Xenos", 15),
+    ]
+
+    all_links = []
+    for category, limit in categories:
+        logger.info(f"Fetching links from Category:{category}...")
+        category_url = f"{BASE_URL}/wiki/Category:{category}"
+        try:
+            links = get_page_links(category_url, limit=limit)
+            all_links.extend(links)
+            logger.info(f"Found {len(links)} articles in {category}")
+        except Exception as e:
+            logger.error(f"Failed to get links from {category}: {e}")
+
+    # Remove duplicates
+    all_links = list(set(all_links))
+    logger.info(f"Total unique articles to scrape: {len(all_links)}")
+
+    scrape_articles(all_links)
+    logger.info("Lore scraping complete!")
