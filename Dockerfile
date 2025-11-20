@@ -12,7 +12,10 @@ COPY ./indexing ./indexing
 COPY ./scraping ./scraping
 COPY ./scripts ./scripts
 COPY ./static ./static
-COPY ./data ./data
+
+# Create data directory and copy lore files
+RUN mkdir -p /app/data
+COPY ./data/raw ./data/raw
 
 # Make startup script executable
 RUN chmod +x ./scripts/startup.sh
