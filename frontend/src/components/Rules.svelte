@@ -1,5 +1,6 @@
 <script>
   import { onMount } from 'svelte';
+  import SearchBar from './SearchBar.svelte';
 
   const API_BASE = window.location.origin;
 
@@ -87,16 +88,11 @@
   <!-- Rules Section -->
   <div class="rules-section">
     <h3>Game Rules</h3>
-    <div class="search-box">
-      <input
-        type="text"
-        bind:value={rulesQuery}
-        on:keypress={handleRulesKeyPress}
-        placeholder="Search rules..."
-        autocomplete="off"
-      />
-      <button on:click={loadRules}>Search</button>
-    </div>
+    <SearchBar
+      bind:value={rulesQuery}
+      placeholder="Search rules by name or description..."
+      onSearch={loadRules}
+    />
 
     <div class="filters">
       <label for="rules-faction-filter">Faction:</label>
@@ -150,16 +146,11 @@
   <!-- Stratagems Section -->
   <div class="rules-section">
     <h3>Stratagems</h3>
-    <div class="search-box">
-      <input
-        type="text"
-        bind:value={stratsQuery}
-        on:keypress={handleStratsKeyPress}
-        placeholder="Search stratagems..."
-        autocomplete="off"
-      />
-      <button on:click={loadStratagems}>Search</button>
-    </div>
+    <SearchBar
+      bind:value={stratsQuery}
+      placeholder="Search stratagems by name or effect..."
+      onSearch={loadStratagems}
+    />
 
     <div class="filters">
       <label for="strats-faction-filter">Faction:</label>

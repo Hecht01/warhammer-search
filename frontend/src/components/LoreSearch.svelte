@@ -1,4 +1,6 @@
 <script>
+  import SearchBar from './SearchBar.svelte';
+
   const API_BASE = window.location.origin;
 
   let query = '';
@@ -26,12 +28,6 @@
     }
   }
 
-  function handleKeyPress(event) {
-    if (event.key === 'Enter') {
-      performSearch();
-    }
-  }
-
   function highlightQuery(text) {
     if (!query) return text;
 
@@ -47,16 +43,11 @@
   }
 </script>
 
-<div class="search-box">
-  <input
-    type="text"
-    bind:value={query}
-    on:keypress={handleKeyPress}
-    placeholder="Search the grimdark lore... (e.g., Emperor, Necrons, Horus Heresy)"
-    autocomplete="off"
-  />
-  <button on:click={performSearch}>Search</button>
-</div>
+<SearchBar
+  bind:value={query}
+  placeholder="Search the grimdark lore... (e.g., Emperor, Necrons, Horus Heresy)"
+  onSearch={performSearch}
+/>
 
 <div class="filters">
   <label for="result-limit">Results:</label>

@@ -10,6 +10,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY ./api ./api
 COPY ./indexing ./indexing
 COPY ./static ./static
+COPY ./data ./data
 
 # Expose port
 EXPOSE 8000
