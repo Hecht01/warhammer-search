@@ -1,6 +1,10 @@
 """FastAPI application for semantic search of Warhammer 40K lore."""
 
 import os
+import time
+import logging
+import json
+from pathlib import Path
 from typing import List, Optional
 from fastapi import FastAPI, Query, HTTPException
 from fastapi.staticfiles import StaticFiles
@@ -8,6 +12,9 @@ from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from qdrant_client import QdrantClient
 from sentence_transformers import SentenceTransformer
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 app = FastAPI(
     title="Warhammer 40K Search API",
@@ -32,6 +39,41 @@ except Exception as e:
     raise RuntimeError(f"Failed to initialize API components: {e}") from e
 
 
+@app.on_event("startup")
+async def startup_event():
+    """Initialize lore data on startup if Qdrant is empty."""
+    logger.info("Starting up Warhammer 40K Search API...")
+
+    # Wait for Qdrant to be ready
+    max_retries = 30
+    for i in range(max_retries):
+        try:
+            client.get_collections()
+            logger.info("Successfully connected to Qdrant")
+            break
+        except Exception as e:
+            if i < max_retries - 1:
+                logger.info(f"Waiting for Qdrant... (attempt {i+1}/{max_retries})")
+                time.sleep(2)
+            else:
+                logger.error(
+                    f"Failed to connect to Qdrant after {max_retries} attempts"
+                )
+                raise e
+
+    # Initialize lore data if needed
+    try:
+        from indexing.init_data import init_lore_data
+
+        init_lore_data(
+            host=QDRANT_HOST, port=QDRANT_PORT, collection_name=COLLECTION_NAME
+        )
+    except Exception as e:
+        logger.error(f"Failed to initialize lore data: {e}")
+        # Don't crash the API if initialization fails
+        logger.warning("API will start but search may not work until data is loaded")
+
+
 class SearchResponse(BaseModel):
     """Response model for search results."""
 
@@ -48,6 +90,7 @@ class Book(BaseModel):
     factions: List[str]
     era: Optional[str] = None
     synopsis: Optional[str] = None
+    page_count: Optional[int] = None
 
 
 class Rule(BaseModel):
@@ -125,818 +168,64 @@ def health_check() -> dict:
         return {"status": "unhealthy", "error": str(e)}
 
 
-# In-memory books database with curated Warhammer 40K books
-BOOKS_DATABASE: List[Book] = [
-    # Horus Heresy Series (30K)
-    Book(
-        title="Horus Rising",
-        author="Dan Abnett",
-        series="The Horus Heresy",
-        factions=["Space Marines", "Imperium"],
-        era="30K",
-        synopsis="The first book in the Horus Heresy series. "
-        "Witness the beginning of the galaxy's greatest betrayal.",
-    ),
-    Book(
-        title="False Gods",
-        author="Graham McNeill",
-        series="The Horus Heresy",
-        factions=["Space Marines", "Chaos"],
-        era="30K",
-        synopsis="Horus's corruption begins as the Warmaster falls to the dark "
-        "powers of Chaos.",
-    ),
-    Book(
-        title="Galaxy in Flames",
-        author="Ben Counter",
-        series="The Horus Heresy",
-        factions=["Space Marines", "Chaos"],
-        era="30K",
-        synopsis="The Isstvan III atrocity - where loyal Astartes are betrayed by "
-        "their traitorous brothers.",
-    ),
-    Book(
-        title="The Flight of the Eisenstein",
-        author="James Swallow",
-        series="The Horus Heresy",
-        factions=["Space Marines", "Imperium"],
-        era="30K",
-        synopsis="Captain Garro's desperate flight to warn the Emperor of Horus's "
-        "treachery.",
-    ),
-    Book(
-        title="Fulgrim",
-        author="Graham McNeill",
-        series="The Horus Heresy",
-        factions=["Space Marines", "Chaos"],
-        era="30K",
-        synopsis="The tragic fall of the Primarch Fulgrim and his Emperor's "
-        "Children Legion.",
-    ),
-    # Gaunt's Ghosts (Astra Militarum)
-    Book(
-        title="First and Only",
-        author="Dan Abnett",
-        series="Gaunt's Ghosts",
-        factions=["Astra Militarum", "Imperium"],
-        era="40K",
-        synopsis="Follow Colonel-Commissar Ibram Gaunt and his regiment of "
-        "Tanith First and Only.",
-    ),
-    Book(
-        title="Ghostmaker",
-        author="Dan Abnett",
-        series="Gaunt's Ghosts",
-        factions=["Astra Militarum", "Imperium"],
-        era="40K",
-        synopsis="The Tanith First continue their campaigns across the war-torn "
-        "Sabbat Worlds.",
-    ),
-    Book(
-        title="Necropolis",
-        author="Dan Abnett",
-        series="Gaunt's Ghosts",
-        factions=["Astra Militarum", "Imperium", "Chaos"],
-        era="40K",
-        synopsis="The epic siege of Vervunhive as Gaunt's Ghosts defend against "
-        "overwhelming Chaos forces.",
-    ),
-    # Eisenhorn Trilogy
-    Book(
-        title="Xenos",
-        author="Dan Abnett",
-        series="Eisenhorn",
-        factions=["Imperium"],
-        era="40K",
-        synopsis="Inquisitor Gregor Eisenhorn hunts aliens and heretics in this "
-        "classic trilogy opener.",
-    ),
-    Book(
-        title="Malleus",
-        author="Dan Abnett",
-        series="Eisenhorn",
-        factions=["Imperium", "Chaos"],
-        era="40K",
-        synopsis="Eisenhorn faces daemonic threats and questions his own methods.",
-    ),
-    Book(
-        title="Hereticus",
-        author="Dan Abnett",
-        series="Eisenhorn",
-        factions=["Imperium", "Chaos"],
-        era="40K",
-        synopsis="The thrilling conclusion as Eisenhorn walks the line between "
-        "loyalty and damnation.",
-    ),
-    # Space Marines
-    Book(
-        title="Ragnar Blackmane",
-        author="Aaron Dembski-Bowden",
-        series=None,
-        factions=["Space Marines"],
-        era="40K",
-        synopsis="The legendary Space Wolf returns in this action-packed novel.",
-    ),
-    Book(
-        title="Blood of Asaheim",
-        author="Chris Wraight",
-        series="Space Wolves",
-        factions=["Space Marines"],
-        era="40K",
-        synopsis="A Space Wolves pack fights to survive on a daemon-infested world.",
-    ),
-    Book(
-        title="The Devastation of Baal",
-        author="Guy Haley",
-        series=None,
-        factions=["Space Marines", "Tyranids"],
-        era="41K",
-        synopsis="The Blood Angels defend their homeworld against Hive Fleet "
-        "Leviathan.",
-    ),
-    Book(
-        title="Dark Imperium",
-        author="Guy Haley",
-        series="Dark Imperium",
-        factions=["Space Marines", "Chaos"],
-        era="41K",
-        synopsis="Roboute Guilliman returns to lead the Imperium in the Era "
-        "Indomitus.",
-    ),
-    Book(
-        title="Dante",
-        author="Guy Haley",
-        series=None,
-        factions=["Space Marines"],
-        era="40K",
-        synopsis="The story of Commander Dante, oldest living Space Marine.",
-    ),
-    # Chaos
-    Book(
-        title="The Talon of Horus",
-        author="Aaron Dembski-Bowden",
-        series="Black Legion",
-        factions=["Chaos Space Marines", "Chaos"],
-        era="40K",
-        synopsis="Abaddon the Despoiler rises to power after the Horus Heresy.",
-    ),
-    Book(
-        title="Black Legion",
-        author="Aaron Dembski-Bowden",
-        series="Black Legion",
-        factions=["Chaos Space Marines", "Chaos"],
-        era="40K",
-        synopsis="Abaddon forges his Black Legion and launches his Black Crusades.",
-    ),
-    Book(
-        title="Lords of Silence",
-        author="Chris Wraight",
-        series=None,
-        factions=["Chaos Space Marines", "Chaos"],
-        era="41K",
-        synopsis="Inside look at a Death Guard warband in the Era Indomitus.",
-    ),
-    # Necrons
-    Book(
-        title="The Infinite and the Divine",
-        author="Robert Rath",
-        series=None,
-        factions=["Necrons"],
-        era="40K",
-        synopsis="A millennia-spanning rivalry between two Necron Overlords. "
-        "Darkly comedic.",
-    ),
-    Book(
-        title="Severed",
-        author="Nate Crowley",
-        series=None,
-        factions=["Necrons"],
-        era="40K",
-        synopsis="Zahndrekh and Obyron, the most eccentric duo in the galaxy.",
-    ),
-    # Orks
-    Book(
-        title="Evil Sun Rising",
-        author="Guy Haley",
-        series=None,
-        factions=["Orks"],
-        era="40K",
-        synopsis="An Ork warboss's rise to power through brutal cunning.",
-    ),
-    Book(
-        title="Brutal Kunnin",
-        author="Mike Brooks",
-        series=None,
-        factions=["Orks", "Astra Militarum"],
-        era="40K",
-        synopsis="Ufthak Blackhawk leads a daring raid on an Imperial world.",
-    ),
-    # Aeldari
-    Book(
-        title="Path of the Warrior",
-        author="Gav Thorpe",
-        series="Path of the Eldar",
-        factions=["Aeldari"],
-        era="40K",
-        synopsis="Walk the Path of the Warrior with the Aeldari of Craftworld Alaitoc.",
-    ),
-    Book(
-        title="Path of the Seer",
-        author="Gav Thorpe",
-        series="Path of the Eldar",
-        factions=["Aeldari"],
-        era="40K",
-        synopsis="The second book following an Aeldari's journey through the Paths.",
-    ),
-    Book(
-        title="Valedor",
-        author="Guy Haley",
-        series=None,
-        factions=["Aeldari", "Tyranids"],
-        era="40K",
-        synopsis="Craftworld Eldar unite against a Tyranid threat.",
-    ),
-    # T'au Empire
-    Book(
-        title="Fire Warrior",
-        author="Simon Spurrier",
-        series=None,
-        factions=["Tau"],
-        era="40K",
-        synopsis="A Fire Warrior's first taste of war in the Greater Good.",
-    ),
-    Book(
-        title="Blades of Damocles",
-        author="Phil Kelly",
-        series=None,
-        factions=["Tau", "Space Marines"],
-        era="40K",
-        synopsis="The Damocles Crusade - Imperium vs T'au Empire.",
-    ),
-    # Adeptus Mechanicus
-    Book(
-        title="Skitarius",
-        author="Rob Sanders",
-        series="Tech-Priest",
-        factions=["Adeptus Mechanicus", "Imperium"],
-        era="40K",
-        synopsis="Follow the cybernetic warriors of the Adeptus Mechanicus.",
-    ),
-    Book(
-        title="Tech-Priest",
-        author="Rob Sanders",
-        series="Tech-Priest",
-        factions=["Adeptus Mechanicus", "Imperium"],
-        era="40K",
-        synopsis="A tech-priest's quest for knowledge in the name of the Omnissiah.",
-    ),
-    # Standalone Classics
-    Book(
-        title="Fifteen Hours",
-        author="Mitchel Scanlon",
-        series=None,
-        factions=["Astra Militarum", "Imperium"],
-        era="40K",
-        synopsis="A guardsman's first and last day in the Imperial Guard. "
-        "Brutally realistic.",
-    ),
-    Book(
-        title="Storm of Iron",
-        author="Graham McNeill",
-        series=None,
-        factions=["Chaos Space Marines", "Chaos"],
-        era="40K",
-        synopsis="The Iron Warriors besiege an Imperial fortress in this brutal tale.",
-    ),
-    Book(
-        title="Space Marine",
-        author="Ian Watson",
-        series=None,
-        factions=["Space Marines"],
-        era="40K",
-        synopsis="One of the earliest Space Marine novels - a classic.",
-    ),
-    # Sisters of Battle
-    Book(
-        title="Faith and Fire",
-        author="James Swallow",
-        series="Sisters of Battle",
-        factions=["Imperium"],
-        era="40K",
-        synopsis="The Adepta Sororitas bring the Emperor's fury to heretics.",
-    ),
-    # Ciaphas Cain
-    Book(
-        title="For the Emperor",
-        author="Sandy Mitchell",
-        series="Ciaphas Cain",
-        factions=["Astra Militarum", "Imperium"],
-        era="40K",
-        synopsis="The first in the humorous series following the reluctant hero "
-        "Commissar Cain.",
-    ),
-    Book(
-        title="Caves of Ice",
-        author="Sandy Mitchell",
-        series="Ciaphas Cain",
-        factions=["Astra Militarum", "Imperium", "Necrons"],
-        era="40K",
-        synopsis="Cain investigates mysterious happenings on an ice world.",
-    ),
-]
+# Data loading functions
+def load_books_from_json() -> List[Book]:
+    """Load books from JSON file or return empty list."""
+    books_file = Path(__file__).parent.parent / "data" / "books.json"
+    if not books_file.exists():
+        logger.warning(f"Books file not found: {books_file}")
+        return []
+
+    try:
+        with open(books_file, "r", encoding="utf-8") as f:
+            books_data = json.load(f)
+        return [Book(**book) for book in books_data]
+    except Exception as e:
+        logger.error(f"Error loading books: {e}")
+        return []
 
 
-# Rules database with core rules and faction-specific rules
-RULES_DATABASE: List[Rule] = [
-    # Core Rules
-    Rule(
-        name="Move",
-        category="Core Rules",
-        description="Units can move up to their Move (M) characteristic in inches. "
-        "They cannot move within Engagement Range of enemy models.",
-        phase="Movement",
-    ),
-    Rule(
-        name="Advance",
-        category="Core Rules",
-        description="Instead of moving normally, a unit can Advance. Roll D6 and add "
-        "to Move characteristic. Cannot shoot (except Assault weapons) or charge.",
-        phase="Movement",
-    ),
-    Rule(
-        name="Fall Back",
-        category="Core Rules",
-        description="Units within Engagement Range can Fall Back instead of making "
-        "a Normal Move. Cannot shoot or charge this turn (unless they can FLY).",
-        phase="Movement",
-    ),
-    Rule(
-        name="Shooting",
-        category="Core Rules",
-        description="Select targets, roll to hit, roll to wound, allocate wounds, "
-        "make saving throws. Cannot shoot if within Engagement Range of enemy.",
-        phase="Shooting",
-    ),
-    Rule(
-        name="Ballistic Skill",
-        category="Core Rules",
-        description="To hit in shooting, roll D6. If result equals or exceeds the "
-        "model's BS characteristic, it hits. Modified by range and modifiers.",
-        phase="Shooting",
-    ),
-    Rule(
-        name="Weapon Skill",
-        category="Core Rules",
-        description="To hit in melee, roll D6. If result equals or exceeds the "
-        "model's WS characteristic, it hits.",
-        phase="Fight",
-    ),
-    Rule(
-        name="Charge",
-        category="Core Rules",
-        description="Roll 2D6. Unit can move that many inches toward enemy unit. "
-        "Must end within Engagement Range to make charge successful.",
-        phase="Charge",
-    ),
-    Rule(
-        name="Fight",
-        category="Core Rules",
-        description="Select targets, make attacks, allocate wounds. Units fight if "
-        "within Engagement Range or made a charge move this turn.",
-        phase="Fight",
-    ),
-    Rule(
-        name="Morale Test",
-        category="Core Rules",
-        description="Roll D6 and add models lost this turn. If total exceeds highest "
-        "Ld in unit, one model flees for each point exceeded.",
-        phase="Morale",
-    ),
-    Rule(
-        name="Cover",
-        category="Core Rules",
-        description="Models fully within terrain feature gain +1 to saving throw "
-        "against ranged attacks (excluding invulnerable saves).",
-        phase="Shooting",
-    ),
-    Rule(
-        name="Invulnerable Save",
-        category="Core Rules",
-        description="Special save that can be made instead of normal save. Never "
-        "modified by AP. Typically 4++, 5++, or 6++.",
-        phase=None,
-    ),
-    Rule(
-        name="Feel No Pain",
-        category="Core Rules",
-        description="After a model loses a wound, roll D6. On specified value (usually "
-        "5+ or 6+), that wound is ignored.",
-        phase=None,
-    ),
-    # Space Marines Faction Rules
-    Rule(
-        name="Oath of Moment",
-        category="Faction",
-        faction="Space Marines",
-        description="At start of your Command phase, select one enemy unit. Your units "
-        "get +1 to Hit rolls targeting that unit until start of your next Command phase.",
-        phase="Command",
-    ),
-    Rule(
-        name="And They Shall Know No Fear",
-        category="Faction",
-        faction="Space Marines",
-        description="You can re-roll Battle-shock and Leadership tests for Space Marine "
-        "units from your army.",
-        phase="Morale",
-    ),
-    # Chaos Space Marines
-    Rule(
-        name="Dark Pacts",
-        category="Faction",
-        faction="Chaos Space Marines",
-        description="Once per battle, you can make a Dark Pact before making a Hit, "
-        "Wound, or Damage roll. Re-roll result, but take D3 mortal wounds after.",
-        phase=None,
-    ),
-    # Necrons
-    Rule(
-        name="Reanimation Protocols",
-        category="Faction",
-        faction="Necrons",
-        description="At end of your turn, roll D6 for each destroyed model in Necron "
-        "units. On 5+, return that model to unit with 1 wound remaining.",
-        phase="Command",
-    ),
-    Rule(
-        name="Command Protocols",
-        category="Faction",
-        faction="Necrons",
-        description="At start of Command phase, select one protocol to be active. "
-        'Affects all Necron units within 6" of a Character.',
-        phase="Command",
-    ),
-    # Orks
-    Rule(
-        name="Waaagh!",
-        category="Faction",
-        faction="Orks",
-        description="Once per battle, call Waaagh! in Command phase. Until start of "
-        "next turn, Ork units can charge after Advancing and get +1 Attack.",
-        phase="Command",
-    ),
-    Rule(
-        name="Mob Rule",
-        category="Faction",
-        faction="Orks",
-        description='Ork units within 6" of 10+ friendly Ork models automatically '
-        "pass Battle-shock tests.",
-        phase="Morale",
-    ),
-    # Tyranids
-    Rule(
-        name="Synapse",
-        category="Faction",
-        faction="Tyranids",
-        description='Tyranid units within 6" of a Synapse creature automatically pass '
-        "Battle-shock tests and can use Synapse abilities.",
-        phase=None,
-    ),
-    Rule(
-        name="Shadow in the Warp",
-        category="Faction",
-        faction="Tyranids",
-        description='Enemy Psykers within 12" of Tyranid units subtract 1 from '
-        "Psychic tests and suffer Perils on any double.",
-        phase=None,
-    ),
-    # Aeldari
-    Rule(
-        name="Strands of Fate",
-        category="Faction",
-        faction="Aeldari",
-        description="Gain Fate dice at start of game. Can substitute any dice roll "
-        "with Fate dice. Represents Eldar foresight.",
-        phase=None,
-    ),
-    # T'au Empire
-    Rule(
-        name="For the Greater Good",
-        category="Faction",
-        faction="Tau",
-        description="Units can make Supporting Fire when friendly unit is charged "
-        'within 6". Fire Overwatch at BS 5+ even if not target of charge.',
-        phase="Charge",
-    ),
-    Rule(
-        name="Markerlights",
-        category="Faction",
-        faction="Tau",
-        description="When shooting with markerlight, place token on enemy unit. "
-        "Friendly T'au units gain +1 to hit that target until end of phase.",
-        phase="Shooting",
-    ),
-]
+def load_rules_from_json() -> List[Rule]:
+    """Load rules from JSON file or return empty list."""
+    rules_file = Path(__file__).parent.parent / "data" / "rules.json"
+    if not rules_file.exists():
+        logger.warning(f"Rules file not found: {rules_file}")
+        return []
+
+    try:
+        with open(rules_file, "r", encoding="utf-8") as f:
+            rules_data = json.load(f)
+        return [Rule(**rule) for rule in rules_data]
+    except Exception as e:
+        logger.error(f"Error loading rules: {e}")
+        return []
 
 
-# Stratagems database organized by faction
-STRATAGEMS_DATABASE: List[Stratagem] = [
-    # Space Marines
-    Stratagem(
-        name="Armour of Contempt",
-        faction="Space Marines",
-        cost=1,
-        type="Battle Tactic",
-        when="Opponent's Shooting or Fight phase, just after enemy selects targets",
-        target="One Space Marines unit from your army",
-        effect="Improve AP of attacks by 1 (e.g., AP-2 becomes AP-1) against this unit "
-        "until end of phase.",
-        phase="Shooting",
-    ),
-    Stratagem(
-        name="Rapid Fire",
-        faction="Space Marines",
-        cost=1,
-        type="Strategic Ploy",
-        when="Your Shooting phase",
-        target="One Space Marines Infantry unit",
-        effect='Bolt weapons in this unit have Range increased by 6" and gain Sustained '
-        "Hits 1 until end of phase.",
-        phase="Shooting",
-    ),
-    Stratagem(
-        name="Honour the Chapter",
-        faction="Space Marines",
-        cost=2,
-        type="Epic Deed",
-        when="Your Fight phase, just after a Space Marines unit fights",
-        target="That unit",
-        effect="That unit can fight again. This cannot be used on a unit that has "
-        "already fought twice this phase.",
-        phase="Fight",
-    ),
-    Stratagem(
-        name="Orbital Strike",
-        faction="Space Marines",
-        cost=2,
-        type="Strategic Ploy",
-        when="Your Shooting phase",
-        target="One enemy unit",
-        effect="Roll 6D6 if unit is visible to a Space Marines Character. For each 4+, "
-        "that unit suffers 1 mortal wound.",
-        phase="Shooting",
-    ),
-    # Chaos Space Marines
-    Stratagem(
-        name="Let the Galaxy Burn",
-        faction="Chaos Space Marines",
-        cost=1,
-        type="Battle Tactic",
-        when="Your Shooting phase",
-        target="One Chaos Space Marines unit",
-        effect="Weapons in that unit gain +1 to Wound rolls until end of phase.",
-        phase="Shooting",
-    ),
-    Stratagem(
-        name="Veterans of the Long War",
-        faction="Chaos Space Marines",
-        cost=1,
-        type="Battle Tactic",
-        when="Your Shooting or Fight phase",
-        target="One Chaos Space Marines unit",
-        effect="+1 to Hit and Wound rolls against Imperium units until end of phase.",
-        phase="Shooting",
-    ),
-    Stratagem(
-        name="Warp-Sight Plea",
-        faction="Chaos Space Marines",
-        cost=1,
-        type="Epic Deed",
-        when="Your Command phase",
-        target="One Chaos Space Marines Psyker",
-        effect="That Psyker can attempt to manifest one additional psychic power this "
-        "phase but suffers D3 mortal wounds.",
-        phase="Command",
-    ),
-    # Necrons
-    Stratagem(
-        name="Resurrection Protocols",
-        faction="Necrons",
-        cost=1,
-        type="Epic Deed",
-        when="End of your Command phase",
-        target="One Necrons unit from your army",
-        effect="Return D3 destroyed models to that unit with full wounds. If a "
-        "Character, return with D3 wounds.",
-        phase="Command",
-    ),
-    Stratagem(
-        name="Adaptive Subroutines",
-        faction="Necrons",
-        cost=1,
-        type="Battle Tactic",
-        when="Your Shooting or Fight phase",
-        target="One Necrons unit",
-        effect="Re-roll Hit rolls of 1 and re-roll Wound rolls of 1 until end of phase.",
-        phase="Shooting",
-    ),
-    Stratagem(
-        name="Disruption Fields",
-        faction="Necrons",
-        cost=1,
-        type="Wargear",
-        when="Your Fight phase",
-        target="One Necrons unit",
-        effect="Melee weapons in this unit gain +1 Strength and AP-1 until end of phase.",
-        phase="Fight",
-    ),
-    Stratagem(
-        name="Quantum Shielding",
-        faction="Necrons",
-        cost=2,
-        type="Wargear",
-        when="Opponent's Shooting phase",
-        target="One Necrons Vehicle",
-        effect="Halve Damage (rounding up) from attacks against this model until end "
-        "of phase.",
-        phase="Shooting",
-    ),
-    # Orks
-    Stratagem(
-        name="Mob Up",
-        faction="Orks",
-        cost=1,
-        type="Strategic Ploy",
-        when="End of your Movement phase",
-        target='Two Ork Infantry units within 2" of each other',
-        effect="Merge both units into one. Combined unit gains benefits of larger mob.",
-        phase="Movement",
-    ),
-    Stratagem(
-        name="Da Jump",
-        faction="Orks",
-        cost=1,
-        type="Strategic Ploy",
-        when="Your Movement phase",
-        target="One Ork Infantry unit",
-        effect='Remove unit from battlefield and set up anywhere more than 9" from '
-        "enemy models. Counts as Remaining Stationary.",
-        phase="Movement",
-    ),
-    Stratagem(
-        name="Get Stuck In",
-        faction="Orks",
-        cost=1,
-        type="Battle Tactic",
-        when="Your Fight phase",
-        target="One Ork unit that charged this turn",
-        effect="Melee weapons gain +1 to Wound and +1 Attack until end of phase.",
-        phase="Fight",
-    ),
-    Stratagem(
-        name="More Dakka",
-        faction="Orks",
-        cost=1,
-        type="Battle Tactic",
-        when="Your Shooting phase",
-        target="One Ork unit",
-        effect="Ranged weapons gain Sustained Hits 1 until end of phase.",
-        phase="Shooting",
-    ),
-    # Tyranids
-    Stratagem(
-        name="Endless Swarm",
-        faction="Tyranids",
-        cost=2,
-        type="Epic Deed",
-        when="Your Command phase",
-        target="One destroyed Tyranids unit with models that cost 25pts or less",
-        effect="Return that unit to Strategic Reserves with half starting strength "
-        "(rounding up).",
-        phase="Command",
-    ),
-    Stratagem(
-        name="Synaptic Channeling",
-        faction="Tyranids",
-        cost=1,
-        type="Battle Tactic",
-        when="Your Shooting or Fight phase",
-        target="One Tyranids unit within Synapse",
-        effect="That unit can re-roll all Hit rolls and Wound rolls until end of phase.",
-        phase="Shooting",
-    ),
-    Stratagem(
-        name="Metabolic Overdrive",
-        faction="Tyranids",
-        cost=1,
-        type="Strategic Ploy",
-        when="Your Movement phase",
-        target="One Tyranids unit",
-        effect='That unit can Advance and still Shoot and Charge this turn. +2" to '
-        "Advance and Charge rolls.",
-        phase="Movement",
-    ),
-    # Aeldari
-    Stratagem(
-        name="Bladestorm",
-        faction="Aeldari",
-        cost=1,
-        type="Battle Tactic",
-        when="Your Shooting phase",
-        target="One Aeldari unit",
-        effect="Shuriken weapons in this unit gain Sustained Hits 1 and Lethal Hits "
-        "until end of phase.",
-        phase="Shooting",
-    ),
-    Stratagem(
-        name="Lightning-Fast Reactions",
-        faction="Aeldari",
-        cost=1,
-        type="Battle Tactic",
-        when="Opponent's Shooting or Fight phase",
-        target="One Aeldari unit",
-        effect="-1 to Hit rolls against this unit and improve invulnerable save by 1 "
-        "(e.g., 4++ becomes 3++) until end of phase.",
-        phase="Shooting",
-    ),
-    Stratagem(
-        name="Phantasm",
-        faction="Aeldari",
-        cost=1,
-        type="Strategic Ploy",
-        when="End of opponent's Movement phase",
-        target="One Aeldari unit",
-        effect='Remove unit from battlefield and redeploy anywhere more than 6" from '
-        "enemy models.",
-        phase="Movement",
-    ),
-    # T'au Empire
-    Stratagem(
-        name="Focused Fire",
-        faction="Tau",
-        cost=1,
-        type="Battle Tactic",
-        when="Your Shooting phase",
-        target="One T'au Empire unit",
-        effect="Select one enemy unit. This unit's weapons gain +1 to Wound against "
-        "that target until end of phase.",
-        phase="Shooting",
-    ),
-    Stratagem(
-        name="Kauyon",
-        faction="Tau",
-        cost=2,
-        type="Strategic Ploy",
-        when="Your Command phase",
-        target="All T'au Empire units within 6\" of a Commander",
-        effect="Those units count as Remaining Stationary this turn. +1 to Hit with "
-        "ranged weapons.",
-        phase="Command",
-    ),
-    Stratagem(
-        name="Mont'ka",
-        faction="Tau",
-        cost=2,
-        type="Strategic Ploy",
-        when="Your Movement phase",
-        target="All T'au Empire units within 6\" of a Commander",
-        effect="Those units can Advance and still Shoot. Ranged weapons gain AP-1 "
-        "until end of turn.",
-        phase="Movement",
-    ),
-    # Astra Militarum
-    Stratagem(
-        name="Fire on My Command",
-        faction="Astra Militarum",
-        cost=1,
-        type="Battle Tactic",
-        when="Your Shooting phase",
-        target='One Astra Militarum Infantry unit within 6" of an Officer',
-        effect="Add 1 to Hit rolls and weapons gain Lethal Hits until end of phase.",
-        phase="Shooting",
-    ),
-    Stratagem(
-        name="Fix Bayonets!",
-        faction="Astra Militarum",
-        cost=1,
-        type="Battle Tactic",
-        when="Your Fight phase",
-        target="One Astra Militarum Infantry unit that charged",
-        effect="+1 Attack and +1 to Wound in melee until end of phase.",
-        phase="Fight",
-    ),
-    Stratagem(
-        name="Send in the Next Wave",
-        faction="Astra Militarum",
-        cost=2,
-        type="Epic Deed",
-        when="Your Command phase",
-        target="One destroyed Astra Militarum Infantry unit",
-        effect="Return unit to Strategic Reserves with half starting strength. Can "
-        "arrive from any battlefield edge.",
-        phase="Command",
-    ),
-]
+def load_stratagems_from_json() -> List[Stratagem]:
+    """Load stratagems from JSON file or return empty list."""
+    stratagems_file = Path(__file__).parent.parent / "data" / "stratagems.json"
+    if not stratagems_file.exists():
+        logger.warning(f"Stratagems file not found: {stratagems_file}")
+        return []
+
+    try:
+        with open(stratagems_file, "r", encoding="utf-8") as f:
+            stratagems_data = json.load(f)
+        return [Stratagem(**strat) for strat in stratagems_data]
+    except Exception as e:
+        logger.error(f"Error loading stratagems: {e}")
+        return []
+
+
+# Load data from JSON files (populated by scrapers on startup)
+BOOKS_DATABASE: List[Book] = load_books_from_json()
+logger.info(f"Loaded {len(BOOKS_DATABASE)} books from data files")
+
+RULES_DATABASE: List[Rule] = load_rules_from_json()
+logger.info(f"Loaded {len(RULES_DATABASE)} rules from data files")
+
+STRATAGEMS_DATABASE: List[Stratagem] = load_stratagems_from_json()
+logger.info(f"Loaded {len(STRATAGEMS_DATABASE)} stratagems from data files")
 
 
 @app.get("/", include_in_schema=False)
