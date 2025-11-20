@@ -141,6 +141,61 @@ def save_books(books: List[Dict], output_file: Path):
     logger.info(f"Saved {len(books)} books to {output_file}")
 
 
+def get_fallback_books() -> List[Dict]:
+    """Generate fallback book data if scraping fails."""
+    logger.info("Generating fallback book data...")
+
+    fallback_books = [
+        {
+            "title": "Horus Rising",
+            "author": "Dan Abnett",
+            "series": "The Horus Heresy",
+            "factions": ["Space Marines", "Imperium"],
+            "era": "30K",
+            "synopsis": "The first book in the Horus Heresy series. Witness the beginning of the greatest betrayal in human history.",
+            "page_count": 416,
+        },
+        {
+            "title": "Gaunt's Ghosts: The Founding",
+            "author": "Dan Abnett",
+            "series": "Gaunt's Ghosts",
+            "factions": ["Astra Militarum", "Imperium"],
+            "era": "40K",
+            "synopsis": "Follow Colonel-Commissar Ibram Gaunt and his regiment, the Tanith First-and-Only.",
+            "page_count": 768,
+        },
+        {
+            "title": "Eisenhorn",
+            "author": "Dan Abnett",
+            "series": "Eisenhorn",
+            "factions": ["Imperium"],
+            "era": "40K",
+            "synopsis": "The story of Inquisitor Gregor Eisenhorn and his fight against Chaos.",
+            "page_count": 896,
+        },
+        {
+            "title": "The Infinite and the Divine",
+            "author": "Robert Rath",
+            "series": None,
+            "factions": ["Necrons"],
+            "era": "40K",
+            "synopsis": "A rivalry spanning millennia between two Necron overlords.",
+            "page_count": 416,
+        },
+        {
+            "title": "Nightbringer",
+            "author": "Graham McNeill",
+            "series": "Ultramarines",
+            "factions": ["Space Marines", "Necrons"],
+            "era": "40K",
+            "synopsis": "The Ultramarines face an ancient evil from the dawn of time.",
+            "page_count": 416,
+        },
+    ]
+
+    return fallback_books
+
+
 def main():
     """Main scraping function."""
     logger.info("Starting book scraping...")
@@ -148,8 +203,19 @@ def main():
     books = []
 
     # Scrape from Lexicanum
-    lexicanum_books = scrape_lexicanum_books()
-    books.extend(lexicanum_books)
+    try:
+        lexicanum_books = scrape_lexicanum_books()
+        books.extend(lexicanum_books)
+        logger.info(f"Scraped {len(lexicanum_books)} books from Lexicanum")
+    except Exception as e:
+        logger.error(f"Lexicanum scraping failed: {e}")
+
+    # Add fallback books if scraping yielded few results
+    if len(books) < 10:
+        logger.warning(
+            f"Only got {len(books)} books from scraping, adding fallback data"
+        )
+        books.extend(get_fallback_books())
 
     # Deduplicate by title
     seen_titles = set()

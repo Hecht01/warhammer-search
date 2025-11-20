@@ -145,6 +145,39 @@ def scrape_articles(links: List[str], output_dir: Path = DATA_DIR) -> None:
                 break
 
 
+def create_fallback_lore_files():
+    """Create fallback lore files if scraping fails."""
+    logger.info("Creating fallback lore files...")
+
+    fallback_lore = {
+        "Space_Marines.txt": """Space Marines
+The Adeptus Astartes, commonly known as Space Marines, are genetically enhanced super-soldiers created by the Emperor of Mankind. Each Space Marine is implanted with gene-seed organs that transform them into beings far superior to normal humans. They stand over seven feet tall in their power armor and are capable of feats far beyond mortal men.
+
+Space Marines are organized into Chapters of approximately 1,000 warriors. Each Chapter has its own traditions, tactics, and heraldry. The most famous Chapters include the Ultramarines, Blood Angels, Dark Angels, and Space Wolves.
+
+They are humanity's finest warriors, the Emperor's Angels of Death, and they know no fear.""",
+        "Imperium_of_Man.txt": """The Imperium of Man
+The Imperium of Man is a galaxy-spanning empire of over one million worlds, united under the rule of the God-Emperor of Mankind. It is the largest and most powerful political entity in the galaxy, but it is beset on all sides by threats both alien and heretical.
+
+The Emperor sits immobile upon the Golden Throne on Terra, kept barely alive by the daily sacrifice of a thousand psykers. Though His body withers, His will guides humanity through the darkness of the 41st millennium.
+
+The Imperium is characterized by authoritarian rule, religious zealotry, technological stagnation, and an eternal war against the enemies of mankind.""",
+        "Chaos.txt": """Chaos
+The Chaos Gods are powerful entities that exist within the Warp, a parallel dimension of psychic energy. The four main Chaos Gods are Khorne (God of War and Blood), Tzeentch (God of Change and Sorcery), Nurgle (God of Decay and Disease), and Slaanesh (God of Excess and Pleasure).
+
+Chaos represents the darkest aspects of sentient emotion and thought. Those who fall to Chaos become corrupted, their souls damned for eternity. Chaos Space Marines are former loyalist Space Marines who turned traitor during the Horus Heresy, ten thousand years ago.
+
+The influence of Chaos is insidious and ever-present, threatening to corrupt the souls of all who are weak or ambitious.""",
+    }
+
+    for filename, content in fallback_lore.items():
+        filepath = DATA_DIR / filename
+        if not filepath.exists():
+            with open(filepath, "w", encoding="utf-8") as f:
+                f.write(content)
+            logger.info(f"Created fallback file: {filename}")
+
+
 if __name__ == "__main__":
     logger.info("Starting Warhammer 40K lore scraping...")
 
@@ -173,5 +206,16 @@ if __name__ == "__main__":
     all_links = list(set(all_links))
     logger.info(f"Total unique articles to scrape: {len(all_links)}")
 
-    scrape_articles(all_links)
+    if all_links:
+        scrape_articles(all_links)
+    else:
+        logger.warning("No articles found to scrape, creating fallback lore files")
+        create_fallback_lore_files()
+
+    # Ensure we have at least some lore files
+    lore_count = len(list(DATA_DIR.glob("*.txt")))
+    if lore_count < 3:
+        logger.warning(f"Only {lore_count} lore files found, adding fallback data")
+        create_fallback_lore_files()
+
     logger.info("Lore scraping complete!")

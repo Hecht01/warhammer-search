@@ -288,7 +288,7 @@
   .stratagem-card .cp-cost {
     float: right;
     background: var(--accent-gold);
-    color: var(--bg-dark);
+    color: #000;
     padding: 3px 8px;
     font-size: 0.9em;
     font-weight: bold;
