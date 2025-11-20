@@ -135,7 +135,9 @@ def scrape_articles(links: List[str], output_dir: Path = DATA_DIR) -> None:
 
             except requests.RequestException as e:
                 retries += 1
-                logger.error(f"Failed to scrape {url} (attempt {retries}/{MAX_RETRIES}): {e}")
+                logger.error(
+                    f"Failed to scrape {url} (attempt {retries}/{MAX_RETRIES}): {e}"
+                )
                 if retries < MAX_RETRIES:
                     sleep(2**retries)  # Exponential backoff
             except OSError as e:
